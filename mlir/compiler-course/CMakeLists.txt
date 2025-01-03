@@ -1,0 +1,3 @@
+list_subdirs(subdirs ${CMAKE_CURRENT_SOURCE_DIR})
+add_subdirs(subdirs "COMPILER COURSE (MLIR)")
+set(MLIR_TEST_DEPENDS ${MLIR_TEST_DEPENDS} PARENT_SCOPE)

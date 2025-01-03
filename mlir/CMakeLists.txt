@@ -285,3 +285,8 @@ endif()
 if(MLIR_STANDALONE_BUILD)
   llvm_distribution_add_targets()
 endif()
+
+# BEGIN COMPILER COURSE
+include(${LLVM_COMMON_CMAKE_UTILS}/Modules/UtilsCompilerCourse.cmake)
+add_subdirectory(compiler-course)
+# END COMPILER COURSE
