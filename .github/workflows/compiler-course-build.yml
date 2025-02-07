@@ -29,7 +29,7 @@ jobs:
             -DLLVM_ENABLE_ASSERTIONS=${{ matrix.assertions }} \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DLLVM_TARGETS_TO_BUILD="X86;AArch64" \
+            -DLLVM_TARGETS_TO_BUILD="X86" \
             -G Ninja
           cmake --build build --config Release -j $(nproc)
       - name: Test
@@ -64,7 +64,7 @@ jobs:
             -DLLVM_ENABLE_ASSERTIONS=${{ matrix.assertions }} \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DLLVM_TARGETS_TO_BUILD="X86;AArch64" \
+            -DLLVM_TARGETS_TO_BUILD="AArch64" \
             -G Ninja
           cmake --build build --config Release -j $(nproc)
       - name: Test
@@ -112,6 +112,6 @@ jobs:
                 -DLLDB_INCLUDE_TESTS=OFF \
                 -DCMAKE_C_COMPILER_LAUNCHER=sccache \
                 -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
-                -DLLVM_TARGETS_TO_BUILD="X86;AArch64" \
+                -DLLVM_TARGETS_TO_BUILD="X86" \
                 ${{ inputs.extra_cmake_args }}
           ninja -C "$builddir" all
