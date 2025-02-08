@@ -1,0 +1,117 @@
+name: Build LLVM
+on: [push, pull_request]
+
+jobs:
+  ubuntu-gcc-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        assertions: [ON, OFF]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Setup environment
+        run: |
+          sudo apt-get install -y \
+            build-essential \
+            ninja-build \
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          max-size: 500M
+          key: ccache-${{ github.job }}
+      - name: Build
+        run: |
+          cmake -S llvm -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DLLVM_ENABLE_PROJECTS="clang;mlir" \
+            -DLLVM_ENABLE_ASSERTIONS=${{ matrix.assertions }} \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DLLVM_TARGETS_TO_BUILD="X86;AArch64" \
+            -G Ninja
+          cmake --build build --config Release -j $(nproc)
+      - name: Test
+        run: |
+          cmake --build build --config Release -t \
+            check-llvm-compiler-course \
+            check-clang-compiler-course \
+            check-mlir-compiler-course -j $(nproc)
+  macos-build:
+    runs-on: macOS-latest
+    strategy:
+      matrix:
+        assertions: [ON, OFF]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Setup environment
+        run: |
+          brew install \
+            ninja
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          max-size: 500M
+          key: ccache-${{ github.job }}
+      - name: Build
+        run: |
+          cmake -S llvm -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DLLVM_ENABLE_PROJECTS="clang;mlir" \
+            -DLLVM_ENABLE_ASSERTIONS=${{ matrix.assertions }} \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DLLVM_TARGETS_TO_BUILD="X86;AArch64" \
+            -G Ninja
+          cmake --build build --config Release -j $(nproc)
+      - name: Test
+        run: |
+          cmake --build build --config Release -t \
+            check-llvm-compiler-course \
+            check-clang-compiler-course \
+            check-mlir-compiler-course -j $(nproc)
+  windows-build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        assertions: [ON, OFF]
+    steps:
+      - name: Setup Windows
+        uses: llvm/actions/setup-windows@main
+        with:
+          arch: amd64
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ inputs.python_version }}
+      - name: Install Ninja
+        uses: llvm/actions/install-ninja@main
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 250
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1
+        with:
+          max-size: 2G
+          variant: sccache
+      - name: Build
+        shell: bash
+        id: build-llvm
+        run: |
+          builddir="$(pwd)"/build
+          echo "llvm-builddir=$builddir" >> "$GITHUB_OUTPUT"
+          cmake -G Ninja \
+                -B "$builddir" \
+                -S llvm \
+                -DLLVM_ENABLE_PROJECTS="clang" \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DLLVM_ENABLE_ASSERTIONS=${{ matrix.assertions }} \
+                -DLLDB_INCLUDE_TESTS=OFF \
+                -DCMAKE_C_COMPILER_LAUNCHER=sccache \
+                -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
+                -DLLVM_TARGETS_TO_BUILD="X86;AArch64" \
+                ${{ inputs.extra_cmake_args }}
+          ninja -C "$builddir" all

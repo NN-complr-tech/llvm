@@ -1,0 +1,16 @@
+'lab:clang':
+ - "clang/compiler-course/**"
+'lab:llvm ir':
+ - "llvm/compiler-course/llvm-ir/**"
+'lab:backend':
+ - "llvm/compiler-course/backend/**"
+'lab:mlir':
+ - "mlir/compiler-course/**"
+
+tests:
+ - "clang/test/compiler-course/**"
+ - "llvm/test/compiler-course/**"
+ - "mlir/test/compiler-course/**"
+
+ci:
+ - ".github/**"

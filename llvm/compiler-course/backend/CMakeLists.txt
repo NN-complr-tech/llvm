@@ -1,0 +1,6 @@
+if(NOT WIN32 AND NOT CYGWIN)
+    include_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Target/X86)
+    list_subdirs(subdirs ${CMAKE_CURRENT_SOURCE_DIR})
+    add_subdirs(subdirs "COMPILER COURSE (BACKEND)")
+    set(LLVM_TEST_DEPENDS ${LLVM_TEST_DEPENDS} PARENT_SCOPE)
+endif()
