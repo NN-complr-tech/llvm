@@ -1,10 +1,11 @@
-# The LLVM Compiler Infrastructure
+# Compiler course 2025
 
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/llvm/llvm-project/badge)](https://securityscorecards.dev/viewer/?uri=github.com/llvm/llvm-project)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8273/badge)](https://www.bestpractices.dev/projects/8273)
 [![libc++](https://github.com/llvm/llvm-project/actions/workflows/libcxx-build-and-test.yaml/badge.svg?branch=main&event=schedule)](https://github.com/llvm/llvm-project/actions/workflows/libcxx-build-and-test.yaml?query=event%3Aschedule)
 
-Welcome to the LLVM project!
+# What is LLVM?
+LLLVM is a set of compiler and toolchain technologies that can be used to develop a frontend for any programming language and a backend for any instruction set architecture. LLVM is designed around a language-independent intermediate representation (IR) that serves as a portable, high-level assembly language that can be optimized with a variety of transformations over multiple passes. The name LLVM originally stood for Low Level Virtual Machine, though the project has expanded and the name is no longer officially an initialism.
 
 This repository contains the source code for LLVM, a toolkit for the
 construction of highly optimized compilers, optimizers, and run-time
@@ -16,29 +17,114 @@ files needed to process intermediate representations and convert them into
 object files. Tools include an assembler, disassembler, bitcode analyzer, and
 bitcode optimizer.
 
-C-like languages use the [Clang](https://clang.llvm.org/) frontend. This
-component compiles C, C++, Objective-C, and Objective-C++ code into LLVM bitcode
--- and from there into object files, using LLVM.
+# 0. Intro
+This course will consist of 4 laboratory work. As part of the laboratory works, you will study all stages of compilation, starting with the generation of the AST tree, ending with code generation.
 
-Other components include:
-the [libc++ C++ standard library](https://libcxx.llvm.org),
-the [LLD linker](https://lld.llvm.org), and more.
+## Note
+Recommended OS - Linux (WSL).
 
-## Getting the Source Code and Building LLVM
+# 1. Clone repository
+1. Create fork this repository
+2. Clone local fork
+```bash
+git clone https://github.com/<your-github-name>/llvm.git
+cd llvm/
+git checkout -b <name-your-branch>
+```
 
-Consult the
-[Getting Started with LLVM](https://llvm.org/docs/GettingStarted.html#getting-the-source-code-and-building-llvm)
-page for information on building and running LLVM.
+# 2. Setup environment
+```bash
+sudo apt-get update \
+    && sudo apt-get install -q -y --no-install-recommends \
+        git \
+        cmake \
+        ccache \
+        mold \
+        clang \
+        build-essential \
+        ninja-build \
+        python3 \
+        python3-pip \
+        wget \
+        vim
+```
 
-For information on how to contribute to the LLVM project, please take a look at
-the [Contributing to LLVM](https://llvm.org/docs/Contributing.html) guide.
+# 3. Build project
+```bash
+cmake -G Ninja -S llvm -B build \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_CXX_COMPILER=clang++ \
+    -DCMAKE_C_COMPILER=clang \
+    -DLLVM_USE_LINKER=mold \
+    -DLLVM_CCACHE_BUILD=ON \
+    -DLLVM_ENABLE_ASSERTIONS=ON \
+    -DLLVM_ENABLE_PROJECTS="clang;mlir" \
+    -DLLVM_TARGETS_TO_BUILD=X86 # specify your target architecture (X86, Aarch64)
+cmake --build build --config Release -j 4
+```
+# 4. Where to implement laboratory work?
+Each directory has an implementation example.
 
-## Getting in touch
+## ClangAST lab
+```bash
+cd clang/compiler-course/ # for labs
+```
+```bash
+cd clang/test/compiler-course/ # for tests
+```
+## LLVM IR lab
+```bash
+cd llvm/compiler-course/llvm-ir/ # for labs
+```
+```bash
+cd llvm/test/compiler-course/ # for tests
+```
+## Backend lab
+```bash
+cd llvm/compiler-course/backend/ # for labs
+```
+```bash
+cd llvm/test/compiler-course/ # for tests
+```
+## MLIR lab
+```bash MLIR
+cd mlir/compiler-course/ # for labs
+```
+```bash MLIR
+cd mlir/test/compiler-course/ # for tests
+```
+# 5. Run tests
+For all tests
+```bash
+cmake --build build --config Release -t \
+    check-llvm-compiler-course \
+    check-clang-compiler-course \
+    check-mlir-compiler-course -j 4
+```
+For one test
+```bash
+./build/bin/llvm-lit -v /path/to/test_file
+```
+# 6. Resources
+- [Telegram сhat][chat]
+- [Telegram сhannel][channel]
+- [Tasks and results][results]
+- Materials
+    - [Lectures][lecture]
+    - [LLVM][llvm]
+    - [MLIR][mlir]
+    - [Clang][clang]
+    - [Official YouTube channel LLVM][youtube_llvm]
 
-Join the [LLVM Discourse forums](https://discourse.llvm.org/), [Discord
-chat](https://discord.gg/xS7Z362),
-[LLVM Office Hours](https://llvm.org/docs/GettingInvolved.html#office-hours) or
-[Regular sync-ups](https://llvm.org/docs/GettingInvolved.html#online-sync-ups).
-
-The LLVM project has adopted a [code of conduct](https://llvm.org/docs/CodeOfConduct.html) for
-participants to all modes of communication within the project.
+<!-- LINKS -->
+<!-- Tasks and results -->
+[results]: https://docs.google.com/spreadsheets/d/1LiZ5FMd5t61yoGdnpANTFpzqtKD_ejtvLl1cHKZxvXQ/edit?usp=sharing
+<!-- Contacts -->
+[channel]: https://t.me/+TPntKPD8z0E3OWJi
+[chat]: https://t.me/+JG3n1jeSAiIxZjMy
+<!-- Materials -->
+[lecture]: https://github.com/NN-complr-tech/Complr-course-lectures
+[llvm]: https://llvm.org/
+[mlir]: https://mlir.llvm.org/
+[clang]: https://clang.llvm.org/
+[youtube_llvm]: https://www.youtube.com/@LLVMPROJ

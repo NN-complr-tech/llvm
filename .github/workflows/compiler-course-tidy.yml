@@ -1,0 +1,43 @@
+name: Static analysis
+on: [pull_request]
+
+jobs:
+  clang-format:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install clang-format
+      run: |
+        sudo apt-get install -y clang-format
+    - name: Run clang-format
+      run: |
+        git-clang-format --diff `git merge-base ${GITHUB_SHA} ${GITHUB_BASE_REF}`
+  clang-tidy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    - name: Update submodules
+      run: git submodule update --init --recursive
+    - name: ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+          key: ${{ github.job }}
+    - uses: ZedThree/clang-tidy-review@v0.20.0
+      id: review
+      with:
+        build_dir: build
+        cmake_command: cmake -S llvm -B build
+            -DCMAKE_BUILD_TYPE=Release
+            -DLLVM_ENABLE_PROJECTS='clang;mlir'
+            -DLLVM_ENABLE_ASSERTIONS=ON
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+            -G Ninja
+        config_file: .clang-tidy
+        apt_packages: build-essential,ninja-build
+        split_workflow: true
+      env:
+        CC: clang-16
+        CXX: clang++-16
