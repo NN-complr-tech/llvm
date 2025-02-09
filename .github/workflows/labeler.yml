@@ -25,4 +25,3 @@ jobs:
           PR_NUMBER: ${{github.event.number}}
         run: |
           python3 .github/deadline.py
-
