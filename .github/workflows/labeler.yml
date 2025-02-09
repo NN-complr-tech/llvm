@@ -1,6 +1,5 @@
 name: "Label bot"
-on:
- - pull_request_target
+on: [pull_request]
 
 jobs:
   label-bot:
@@ -26,4 +25,3 @@ jobs:
           PR_NUMBER: ${{github.event.number}}
         run: |
           python3 .github/deadline.py
-
