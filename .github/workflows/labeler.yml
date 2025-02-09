@@ -16,3 +16,13 @@ jobs:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           configuration-path: ".github/labeler.yml"
           dot: true
+      - name: Install PyGithub
+        run: |
+          pip3 install PyGithub
+      - name: Check deadline
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          PR_NUMBER: ${{github.event.number}}
+        run: |
+          python3 .github/deadline.py
+
