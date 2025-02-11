@@ -24,7 +24,7 @@ jobs:
       uses: hendrikmuhs/ccache-action@v1.2
       with:
           key: ${{ github.job }}
-    - uses: ZedThree/clang-tidy-review@v0.20.0
+    - uses: aobolensk/clang-tidy-review@v0.20.1-patch-clang-tidy-19
       id: review
       with:
         build_dir: build
@@ -39,5 +39,5 @@ jobs:
         apt_packages: build-essential,ninja-build
         split_workflow: true
       env:
-        CC: clang-16
-        CXX: clang++-16
+        CC: clang-19
+        CXX: clang++-19
