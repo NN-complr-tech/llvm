@@ -156,14 +156,14 @@ clang/test/AST/Interp/ @tbaederr
 .github/** @aobolensk @Kuznetsov-Artyom
 
 # Clang
-/clang/compiler-course/** @m-ly4 @Kuznetsov-Artyom
-/clang/test/compiler-course/** @m-ly4 @Kuznetsov-Artyom
+/clang/compiler-course/**  @aobolensk @m-ly4 @Kuznetsov-Artyom
+/clang/test/compiler-course/**  @aobolensk @m-ly4 @Kuznetsov-Artyom
 
 # LLVM
-/llvm/compiler-course/** @m-ly4 @Kuznetsov-Artyom
-/llvm/test/compiler-course/** @m-ly4 @Kuznetsov-Artyom
+/llvm/compiler-course/**  @aobolensk @m-ly4 @Kuznetsov-Artyom
+/llvm/test/compiler-course/**  @aobolensk @m-ly4 @Kuznetsov-Artyom
 
 # MLIR
-/mlir/compiler-course/** @m-ly4 @Kuznetsov-Artyom
-/mlir/test/compiler-course/** @m-ly4 @Kuznetsov-Artyom
+/mlir/compiler-course/**  @aobolensk @m-ly4 @Kuznetsov-Artyom
+/mlir/test/compiler-course/**  @aobolensk @m-ly4 @Kuznetsov-Artyom
 # END COMPILER COURSE
