@@ -148,3 +148,20 @@
 
 # libclang/Python bindings
 /clang/bindings/python @DeinAlptraum
+
+# BEGIN COMPILER COURSE
+# CI
+.github/** @aobolensk @Kuznetsov-Artyom
+
+# Clang
+/clang/compiler-course/**  @aobolensk @Kuznetsov-Artyom
+/clang/test/compiler-course/**  @aobolensk @Kuznetsov-Artyom
+
+# LLVM
+/llvm/compiler-course/**  @aobolensk @Kuznetsov-Artyom
+/llvm/test/compiler-course/**  @aobolensk @Kuznetsov-Artyom
+
+# MLIR
+/mlir/compiler-course/**  @aobolensk @Kuznetsov-Artyom
+/mlir/test/compiler-course/**  @aobolensk @Kuznetsov-Artyom
+# END COMPILER COURSE
