@@ -1,6 +1,6 @@
-set(Title "ExamplePass")
-set(Student "Ivanov_Ivan")
-set(Group "FIIT0")
+set(Title "add_replace_pass")
+set(Student "Shishkarev_Andrey")
+set(Group "FIIT2")
 set(TARGET_NAME "${Title}_${Student}_${Group}_LLVM_IR")
 
 if (NOT WIN32 AND NOT CYGWIN)
