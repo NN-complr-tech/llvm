@@ -405,5 +405,3 @@ body:             |
     %3:fr64 = nofpexcept VFMADD213SDr %1, %0, %2, implicit $mxcsr
     $xmm0 = COPY %3
     RET 0, $xmm0
-
-...
