@@ -1,4 +1,4 @@
-# Compiler course 2025
+# Compiler course 2026
 
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/llvm/llvm-project/badge)](https://securityscorecards.dev/viewer/?uri=github.com/llvm/llvm-project)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8273/badge)](https://www.bestpractices.dev/projects/8273)
@@ -21,7 +21,7 @@ bitcode optimizer.
 This course will consist of 4 laboratory work. As part of the laboratory works, you will study all stages of compilation, starting with the generation of the AST tree, ending with code generation.
 
 ## Note
-Recommended OS - Linux (WSL).
+Recommended OS - Linux (or WSL).
 
 # 1. Clone repository
 1. Create fork this repository
@@ -107,7 +107,6 @@ For one test
 ```
 # 6. Resources
 - [Telegram сhat][chat]
-- [Telegram сhannel][channel]
 - [Tasks and results][results]
 - Materials
     - [Lectures][lecture]
@@ -118,10 +117,9 @@ For one test
 
 <!-- LINKS -->
 <!-- Tasks and results -->
-[results]: https://docs.google.com/spreadsheets/d/1LiZ5FMd5t61yoGdnpANTFpzqtKD_ejtvLl1cHKZxvXQ/edit?usp=sharing
+[results]: https://docs.google.com/spreadsheets/d/1wK_G8Cd-QUJbuw-BtvZZj3breSrklDAyVb2uVWFqXEE/edit?usp=sharing
 <!-- Contacts -->
-[channel]: https://t.me/+TPntKPD8z0E3OWJi
-[chat]: https://t.me/+JG3n1jeSAiIxZjMy
+[chat]: https://t.me/+1NqL7O2C6X0zYTFi
 <!-- Materials -->
 [lecture]: https://github.com/NN-complr-tech/Complr-course-lectures
 [llvm]: https://llvm.org/
