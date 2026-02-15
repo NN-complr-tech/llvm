@@ -1,0 +1,5 @@
+if (CLANG_PLUGIN_SUPPORT)
+    list_subdirs(subdirs ${CMAKE_CURRENT_SOURCE_DIR})
+    add_subdirs(subdirs "COMPILER COURSE (ClangAST)")
+    set(CLANG_TEST_DEPS ${CLANG_TEST_DEPS} PARENT_SCOPE)
+endif()
