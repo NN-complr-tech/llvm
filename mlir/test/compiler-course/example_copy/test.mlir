@@ -1,4 +1,4 @@
-// RUN: mlir-opt -load-pass-plugin=%mlir_lib_dir/example_MLIR%shlibext --pass-pipeline="builtin.module(example_MLIR)" %s | FileCheck %s
+// RUN: mlir-opt -load-pass-plugin=%mlir_lib_dir/example_copy_MLIR%shlibext --pass-pipeline="builtin.module(example_copy_MLIR)" %s | FileCheck %s
 
 // CHECK: Count operations: 7
 // CHECK-NEXT: module attributes {{.*}} {
