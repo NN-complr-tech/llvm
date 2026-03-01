@@ -1,4 +1,4 @@
-# RUN: llc -mtriple x86_64-unknown-linux-gnu --load=%llvmshlibdir/ExamplePass_Ivanov_Ivan_FIIT0_BACKEND%shlibext \
+# RUN: llc -mtriple x86_64-unknown-linux-gnu --load=%llvmshlibdir/example_BACKEND%shlibext \
 # RUN: -run-pass=example-x86  %s -o - | FileCheck %s
 
 

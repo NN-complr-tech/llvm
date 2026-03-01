@@ -9,9 +9,7 @@ using namespace mlir;
 namespace {
 class ExamplePass : public PassWrapper<ExamplePass, OperationPass<ModuleOp>> {
 public:
-  StringRef getArgument() const final {
-    return "ExamplePass_Ivanov_Ivan_FIIT0_MLIR";
-  }
+  StringRef getArgument() const final { return "example_MLIR"; }
   StringRef getDescription() const final { return "Description pass"; }
 
   void runOnOperation() override {

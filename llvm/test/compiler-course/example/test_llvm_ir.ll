@@ -1,4 +1,4 @@
-; RUN: opt -load-pass-plugin %llvmshlibdir/ExamplePass_Ivanov_Ivan_FIIT0_LLVM_IR%pluginext\
+; RUN: opt -load-pass-plugin %llvmshlibdir/example_LLVM_IR%pluginext\
 ; RUN: -passes=example -S %s | FileCheck %s
 
 ; CHECK: _Z6isEveni

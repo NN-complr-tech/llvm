@@ -1,7 +1,5 @@
-set(Title "ExamplePass")
-set(Student "Ivanov_Ivan")
-set(Group "FIIT0")
-set(TARGET_NAME "${Title}_${Student}_${Group}_LLVM_IR")
+get_filename_component(CURRENT_DIR_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+set(TARGET_NAME "${CURRENT_DIR_NAME}_LLVM_IR")
 
 if (NOT WIN32 AND NOT CYGWIN)
     file(GLOB_RECURSE SOURCES *.cpp *.h *.hpp)
