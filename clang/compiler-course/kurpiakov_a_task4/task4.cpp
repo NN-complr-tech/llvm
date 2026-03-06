@@ -18,7 +18,7 @@ public:
     if (var != var->getCanonicalDecl()){
       return true;
     }
-    
+
     if (var->isFileVarDecl()){
       if (var->getStorageClass() == clang::SC_Static){
         static_var_counter += 1;
@@ -44,6 +44,7 @@ public:
   }
 
   void print() const {
+    llvm::outs() << "Total count : " << global_var_counter + static_var_counter + local_var_counter + func_parm_counter<< "\n";
     llvm::outs() << "Global variables : " << global_var_counter << "\n";
     llvm::outs() << "Static variables : " << static_var_counter << "\n";
     llvm::outs() << "Local variables  : " << local_var_counter << "\n";
