@@ -1,4 +1,4 @@
-// RUN: %clang_cc1 -load %llvmshlibdir/VarStatPlugin_Kurpiakov_Aleksei_FIIT3_ClangAST%pluginext -plugin example_plugin -fsyntax-only %s 2>&1 | FileCheck %s
+// RUN: %clang_cc1 -load %llvmshlibdir/VarStatPlugin_Kurpiakov_Aleksei_FIIT3_ClangAST%pluginext -plugin var_statistic -fsyntax-only %s 2>&1 | FileCheck %s
 
 //CHECK: Total count : 27
 //CHECK-NEXT: Global variables : 9
