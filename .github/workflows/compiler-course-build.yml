@@ -38,7 +38,7 @@ jobs:
             check-llvm-compiler-course \
             check-clang-compiler-course \
             check-mlir-compiler-course -j $(nproc)
-    macos-build:
+  macos-build:
     runs-on: macOS-latest
     strategy:
       matrix:
