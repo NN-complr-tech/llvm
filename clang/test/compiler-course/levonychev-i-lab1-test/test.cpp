@@ -33,3 +33,13 @@ void test_func4() {
     *x4_ptr = 1;
 }
 
+// CHECK: void test_func5(const double& x5{{\)}} {
+void test_func5(double& x5) {
+    double var = x5;
+}
+
+
+// CHECK-NOT: void test_func6(const double& x6{{\)}} {
+void test_func6(double& x6) {
+    x6 = 4.0;
+}
