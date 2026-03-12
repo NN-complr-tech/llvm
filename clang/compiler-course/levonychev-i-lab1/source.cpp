@@ -10,15 +10,13 @@ namespace {
 
 class MutationFinder : public RecursiveASTVisitor<MutationFinder> {
   const VarDecl *Target;
-  bool AddressMutated = false; 
+  bool VarMutated = false; 
   bool DataMutated = false;
-
 public:
   explicit MutationFinder(const VarDecl *D) : Target(D) {}
 
-  bool isAddressMutated() const { return AddressMutated; }
+  bool isVarMutated() const { return VarMutated; }
   bool isDataMutated() const { return DataMutated; }
-
   bool VisitBinaryOperator(BinaryOperator *Node) {
     if (!Node->isAssignmentOp()) return true;
 
@@ -26,7 +24,7 @@ public:
 
     if (auto *DRE = dyn_cast<DeclRefExpr>(LHS)) {
       if (DRE->getDecl() == Target) {
-        AddressMutated = true;
+       VarMutated = true;
       }
       
     }
@@ -49,7 +47,7 @@ public:
     Expr *Sub = Node->getSubExpr()->IgnoreParenImpCasts();
 
     if (auto *DRE = dyn_cast<DeclRefExpr>(Sub)) {
-      if (DRE->getDecl() == Target) AddressMutated = true;
+      if (DRE->getDecl() == Target) VarMutated = true;
     }
 
     if (auto *UO = dyn_cast<UnaryOperator>(Sub)) {
@@ -83,7 +81,7 @@ explicit ConstAnalysisVisitor(Rewriter &R) : TheRewriter(R) {}
         SourceLocation VarNameLoc = D->getLocation();
         if (isPtr) {
           bool canBeDataConst = !T->getPointeeType().isConstQualified() && !Finder.isDataMutated();
-          bool canBePtrConst = !T.isConstQualified() && !Finder.isAddressMutated();
+          bool canBePtrConst = !T.isConstQualified() && !Finder.isVarMutated();
 
           if (canBeDataConst && canBePtrConst) {
             TheRewriter.InsertText(StartLoc, "const ", true, true);
@@ -95,7 +93,7 @@ explicit ConstAnalysisVisitor(Rewriter &R) : TheRewriter(R) {}
           }
         } 
         else if (isRef) {
-          if (!T.getNonReferenceType().isConstQualified() && !Finder.isAddressMutated()) {
+          if (!T.getNonReferenceType().isConstQualified() && !Finder.isVarMutated()) {
             TheRewriter.InsertText(StartLoc, "const ", true, true);
           }
         }

@@ -43,3 +43,16 @@ void test_func5(double& x5) {
 void test_func6(double& x6) {
     x6 = 4.0;
 }
+
+// CHECK-NOT: const int& x7 {{\=}} var;
+void test_func7() {
+    int var = 10;
+    int& x7 = var;
+    x7 = 100;
+}
+// CHECK-NOT: const int& x8 {{\=}} var;
+void test_func8() {
+    int var = 10;
+    int& x8 = var;
+    ++x8;
+}
