@@ -56,3 +56,9 @@ void test_func8() {
     int& x8 = var;
     ++x8;
 }
+// CHECK-NOT: const int{{\*}} const x9 = &var;
+void test_func9() {
+    int var = 10;
+    int* x9 = &var;
+    ++(*x9);
+}
