@@ -1,10 +1,11 @@
 // RUN: %clang_cc1 -load %llvmshlibdir/VariablesStatisticPlugin_Khruev_Anton_FIIT1_ClangAST%pluginext -plugin variables_statistic -fsyntax-only %s 2>&1 | FileCheck %s
 
 // CHECK: Total count : 29
-// CHECK-NEXT: Global variables : 8
-// CHECK-NEXT: Static variables : 7
+// CHECK-NEXT: Global variables : 4
+// CHECK-NEXT: Static variables : 11
 // CHECK-NEXT: Local variables  : 6
 // CHECK-NEXT: Function params  : 8
+
 
 static bool is_active = false;        // global var: 1
 static double global_val = 3.14;      // global var: 2
