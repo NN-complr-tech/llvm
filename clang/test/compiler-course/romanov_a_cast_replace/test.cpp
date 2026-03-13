@@ -122,6 +122,15 @@
 // CHECK-NEXT:     int b = static_cast<int>(a);
 // CHECK-NEXT: }
 
+// CHECK-LABEL: struct MyStruct {
+// CHECK-NEXT:     int field = static_cast<int>(3.14f);
+// CHECK-NEXT:     int method(float a) {
+// CHECK-NEXT:         return static_cast<int>(a);
+// CHECK-NEXT:     }
+// CHECK-NEXT: };
+
+// CHECK-LABEL: const float B = static_cast<float>(42);
+
 //--- input.cpp
 int staticCastBase1(float a) {
     return (int)a;
@@ -253,3 +262,12 @@ Derived *baseToDerivedCast(Base *a) {
 void castInAssignment(float a) {
     int b = (int)a;
 }
+
+struct MyStruct {
+    int field = (int)3.14f;
+    int method(float a) {
+        return (int)a;
+    }
+};
+
+const float B = (float)42;
