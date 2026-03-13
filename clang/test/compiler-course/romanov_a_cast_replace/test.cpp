@@ -1,7 +1,6 @@
+// clang-format off
 // RUN: split-file %s %t
-// RUN: %clang_cc1 -load %llvmshlibdir/romanov_a_cast_replace_ClangAST%pluginext
-// -plugin romanov_a_cast_replace_plugin -fsyntax-only %t/input.cpp 2>&1 |
-// FileCheck %s
+// RUN: %clang_cc1 -load %llvmshlibdir/romanov_a_cast_replace_ClangAST%pluginext -plugin romanov_a_cast_replace_plugin -fsyntax-only %t/input.cpp 2>&1 | FileCheck %s
 
 // CHECK-LABEL: int staticCastBase1(float a) {
 // CHECK-NEXT:     return static_cast<int>(a);
@@ -103,59 +102,154 @@
 // CHECK-NEXT:     return (reinterpret_cast<char *>((a)));
 // CHECK-NEXT: }
 
+// CHECK-LABEL: int enumToIntCast(Color c) {
+// CHECK-NEXT:     return static_cast<int>(c);
+// CHECK-NEXT: }
+
+// CHECK-LABEL: Color intToEnumCast(int a) {
+// CHECK-NEXT:     return static_cast<Color>(a);
+// CHECK-NEXT: }
+
+// CHECK-LABEL: Base *derivedToBaseCast(Derived *a) {
+// CHECK-NEXT:     return static_cast<Base *>(a);
+// CHECK-NEXT: }
+
+// CHECK-LABEL: Derived *baseToDerivedCast(Base *a) {
+// CHECK-NEXT:     return static_cast<Derived *>(a);
+// CHECK-NEXT: }
+
+// CHECK-LABEL: void castInAssignment(float a) {
+// CHECK-NEXT:     int b = static_cast<int>(a);
+// CHECK-NEXT: }
+
 //--- input.cpp
-int staticCastBase1(float a) { return (int)a; }
+int staticCastBase1(float a) {
+    return (int)a;
+}
 
+// Won't be replaced, because it is functional-style cast, not C-style cast
 int staticCastBase2(float a) {
-  // Won't be replaced, because it is functional style cast, not C-style cast
-  return int(a);
+    return int(a);
 }
 
-int staticCastBase3(float a) { return (int)(a); }
+int staticCastBase3(float a) {
+    return (int)(a);
+}
 
-int staticCastBase4(float a) { return ((int)(a)); }
+int staticCastBase4(float a) {
+    return ((int)(a));
+}
 
-long long staticCastBase5(float a) { return (long long)a; }
+long long staticCastBase5(float a) {
+    return (long long)a;
+}
 
-long long staticCastBase6(float a) { return (long long)(a); }
+long long staticCastBase6(float a) {
+    return (long long)(a);
+}
 
+// Won't be replaced, because it is already C++ style cast, not C-style cast
 int staticCastBase7(float a) {
-  // Won't be replaced, because it is already C++ style cast, not C-style cast
-  return static_cast<int>(a);
+    return static_cast<int>(a);
 }
 
-long double staticCastSeq(float a) { return (long double)(long long)a; }
+long double staticCastSeq(float a) {
+    return (long double)(long long)a;
+}
 
-double staticCastAfterOp(long long a, long long b) { return (double)(a + b); }
+double staticCastAfterOp(long long a, long long b) {
+    return (double)(a + b);
+}
 
-short staticCastSeqWithOp(long long a, char b) { return (short)((char)a + b); }
+short staticCastSeqWithOp(long long a, char b) {
+    return (short)((char)a + b);
+}
 
-bool staticCastInCondition(float a) { return (int)a > 0; }
+bool staticCastInCondition(float a) {
+    return (int)a > 0;
+}
 
-int staticCastNegative(double a) { return (int)-a; }
+int staticCastNegative(double a) {
+    return (int)-a;
+}
 
-int staticCastTernary(float a, float b) { return (int)(a > 0 ? a : b); }
+int staticCastTernary(float a, float b) {
+    return (int)(a > 0 ? a : b);
+}
 
-int *constCastBase1(const int *a) { return (int *)a; }
+int *constCastBase1(const int *a) {
+    return (int *)a;
+}
 
-const int *constCastBase2(int *a) { return (const int *)a; }
+const int *constCastBase2(int *a) {
+    return (const int *)a;
+}
 
-int *constCastBase3(const int *a) { return ((int *)(a)); }
+int *constCastBase3(const int *a) {
+    return ((int *)(a));
+}
 
-volatile int *constCastVolatile1(int *a) { return (volatile int *)a; }
+volatile int *constCastVolatile1(int *a) {
+    return (volatile int *)a;
+}
 
-int *constCastVolatile2(volatile int *a) { return (int *)a; }
+int *constCastVolatile2(volatile int *a) {
+    return (int *)a;
+}
 
-int *constCastConstVolatile(const volatile int *a) { return (int *)a; }
+int *constCastConstVolatile(const volatile int *a) {
+    return (int *)a;
+}
 
-int *reinterpretCastBase1(float *a) { return (int *)a; }
+int *reinterpretCastBase1(float *a) {
+    return (int *)a;
+}
 
-long reinterpretCastPtrToInt(int *a) { return (long)a; }
+long reinterpretCastPtrToInt(int *a) {
+    return (long)a;
+}
 
-int *reinterpretCastIntToPtr(long a) { return (int *)a; }
+int *reinterpretCastIntToPtr(long a) {
+    return (int *)a;
+}
 
-void *reinterpretCastToVoidPtr(int *a) { return (void *)a; }
+void *reinterpretCastToVoidPtr(int *a) {
+    return (void *)a;
+}
 
-int *reinterpretCastFromVoidPtr(void *a) { return (int *)a; }
+int *reinterpretCastFromVoidPtr(void *a) {
+    return (int *)a;
+}
 
-char *reinterpretCastWithParens(float *a) { return ((char *)(a)); }
+char *reinterpretCastWithParens(float *a) {
+    return ((char *)(a));
+}
+
+enum Color { Red, Green, Blue };
+
+int enumToIntCast(Color c) {
+    return (int)c;
+}
+
+Color intToEnumCast(int a) {
+    return (Color)a;
+}
+
+struct Base {
+  virtual ~Base() {}
+};
+struct Derived : Base {
+  int id;
+};
+
+Base *derivedToBaseCast(Derived *a) {
+    return (Base *)a;
+}
+
+Derived *baseToDerivedCast(Base *a) {
+    return (Derived *)a;
+}
+
+void castInAssignment(float a) {
+    int b = (int)a;
+}

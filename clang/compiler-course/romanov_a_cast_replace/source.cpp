@@ -124,4 +124,4 @@ private:
 
 static clang::FrontendPluginRegistry::Add<RomanovACastReplaceAction>
     X("romanov_a_cast_replace_plugin",
-      "Plugin to replace C-style castes in C++-style castes");
+      "Plugin for replacing C-style casts with C++-style castes");
