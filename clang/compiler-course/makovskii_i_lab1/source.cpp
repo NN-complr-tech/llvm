@@ -102,19 +102,16 @@ public:
       if (!dataMutated && !QT.getNonReferenceType().isConstQualified()) {
         TheRewriter.InsertTextBefore(VD->getBeginLoc(), "const ");
       }
-    } 
-    else if (isPtr) {
+    } else if (isPtr) {
       if (!ptrMutated && !dataMutated) {
         if (!dataIsConst)
           TheRewriter.InsertTextBefore(VD->getBeginLoc(), "const ");
         if (!ptrIsConst)
           TheRewriter.InsertTextBefore(VD->getLocation(), "const ");
-      }
-      else if (!dataMutated && ptrMutated) {
+      } else if (!dataMutated && ptrMutated) {
         if (!dataIsConst)
           TheRewriter.InsertTextBefore(VD->getBeginLoc(), "const ");
-      }
-      else if (dataMutated && !ptrMutated) {
+      } else if (dataMutated && !ptrMutated) {
         if (!ptrIsConst)
           TheRewriter.InsertTextBefore(VD->getLocation(), "const ");
       }
@@ -147,7 +144,8 @@ public:
       llvm::outs() << std::string(RewriteBuf->begin(), RewriteBuf->end());
     } else {
       bool Invalid = false;
-      StringRef Buf = Context.getSourceManager().getBufferData(MainFileID, &Invalid);
+      StringRef Buf =
+          Context.getSourceManager().getBufferData(MainFileID, &Invalid);
       if (!Invalid) {
         llvm::outs() << Buf;
       }
