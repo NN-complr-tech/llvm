@@ -1,6 +1,6 @@
 #include "clang/AST/ASTConsumer.h"
-#include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/AST/ParentMapContext.h"
+#include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/FrontendPluginRegistry.h"
 #include "llvm/Support/raw_ostream.h"
@@ -12,28 +12,26 @@ namespace {
 struct ResourceRecord {
   clang::SourceLocation loc;
   std::string type;
-  const clang::VarDecl
-      *var;
+  const clang::VarDecl *var;
   const clang::Expr *allocExpr;
 };
 
 class KosolapovVAnalyzerTUVisitor
     : public clang::RecursiveASTVisitor<KosolapovVAnalyzerTUVisitor> {
 public:
-  explicit KosolapovVAnalyzerTUVisitor(clang::ASTContext *ctx) : m_ctx(ctx), 
-                        diagLeakID(ctx->getDiagnostics().getCustomDiagID(
+  explicit KosolapovVAnalyzerTUVisitor(clang::ASTContext *ctx)
+      : m_ctx(ctx), diagLeakID(ctx->getDiagnostics().getCustomDiagID(
                         clang::DiagnosticsEngine::Warning,
                         "Potential leak of %0 at line %1")) {}
 
   bool TraverseFunctionDecl(clang::FunctionDecl *func) {
-    m_stack.emplace(); 
+    m_stack.emplace();
     bool result = RecursiveASTVisitor::TraverseFunctionDecl(func);
     if (!m_stack.empty()) {
       for (const auto &rec : m_stack.top()) {
         unsigned line =
             m_ctx->getSourceManager().getSpellingLineNumber(rec.loc);
-        m_ctx->getDiagnostics().Report(rec.loc, diagLeakID)
-            << rec.type << line;
+        m_ctx->getDiagnostics().Report(rec.loc, diagLeakID) << rec.type << line;
       }
       m_stack.pop();
     }
