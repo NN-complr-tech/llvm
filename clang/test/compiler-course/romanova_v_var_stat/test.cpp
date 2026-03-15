@@ -16,7 +16,7 @@ extern int extern_global_1;               // +1 global
 extern int extern_global_2;               // +1 global
 
 extern int global_int_2;                  // +1 global
-int global_int_2;                         //повторное определение                
+int global_int_2;                         //повторное определение              
 
 const int const_global = 100;             // +1 global
 
