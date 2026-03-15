@@ -10,7 +10,7 @@ namespace {
 
 class ExceptionAnalyzer {
 public:
-  explicit ExceptionAnalyzer(clang::ASTContext &Ctx) : Context(Ctx) {}
+  ExceptionAnalyzer() = default;
 
   bool functionThrows(const clang::FunctionDecl *Func) {
     if (!Func)
@@ -49,7 +49,6 @@ public:
   }
 
 private:
-  clang::ASTContext &Context;
   llvm::DenseMap<const clang::FunctionDecl *, bool> ThrowCache;
   llvm::SmallPtrSet<const clang::FunctionDecl *, 8> InProgress;
 
@@ -104,8 +103,7 @@ private:
 class NikitinaVVisitor final
     : public clang::RecursiveASTVisitor<NikitinaVVisitor> {
 public:
-  explicit NikitinaVVisitor(clang::ASTContext *Ctx)
-      : Ctx(Ctx), Analyzer(*Ctx) {}
+  explicit NikitinaVVisitor(clang::ASTContext *Ctx) : Ctx(Ctx) {}
 
   bool VisitFunctionDecl(clang::FunctionDecl *Func) {
     if (!Func->hasBody() || Func->isMain()) {
@@ -126,11 +124,6 @@ public:
 
       Func->setType(UpdatedType);
     }
-
-    const auto *ResultFPT = Func->getType()->getAs<clang::FunctionProtoType>();
-    llvm::outs() << "Function " << Func->getNameAsString()
-                 << ": exception spec: " << ResultFPT->getExceptionSpecType()
-                 << "\n";
 
     return true;
   }

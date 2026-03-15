@@ -1,4 +1,5 @@
-// RUN: %clang_cc1 -fcxx-exceptions -fexceptions -load %llvmshlibdir/nikitina_v_lab1_ClangAST%pluginext -add-plugin nikitina_v_noexcept_plugin -fsyntax-only %s 2>&1 | FileCheck %s
+// RUN: %clang_cc1 -fcxx-exceptions -fexceptions -load %llvmshlibdir/nikitina_v_lab1_ClangAST%pluginext -add-plugin nikitina_v_noexcept_plugin -ast-dump %s | FileCheck %s
+
 void SafeCalculation() {
     double a = 3.14;
     double b = 2.0;
@@ -54,16 +55,17 @@ void InstantiateStruct() {
     DangerStruct instance; 
 }
 
-// CHECK: Function SafeCalculation: exception spec: 5
-// CHECK: Function RaisesException: exception spec: 0
-// CHECK: Function ConditionalThrow: exception spec: 0
-// CHECK: Function WrapperForThrow: exception spec: 0
-// CHECK: Function WrapperForSafe: exception spec: 5
-// CHECK: Function HeapAllocation: exception spec: 0
-// CHECK: Function DeepCallC: exception spec: 0
-// CHECK: Function DeepCallB: exception spec: 0
-// CHECK: Function DeepCallA: exception spec: 0
-// CHECK: Function ExecuteTask: exception spec: 0
-// CHECK: Function FibonacciThrow: exception spec: 0
-// CHECK: Function DangerStruct: exception spec: 0
-// CHECK: Function InstantiateStruct: exception spec: 0
+
+// CHECK: FunctionDecl {{.*}} SafeCalculation 'void () noexcept'
+// CHECK: FunctionDecl {{.*}} RaisesException 'void ()'
+// CHECK: FunctionDecl {{.*}} ConditionalThrow 'void (bool)'
+// CHECK: FunctionDecl {{.*}} WrapperForThrow 'void ()'
+// CHECK: FunctionDecl {{.*}} WrapperForSafe 'void () noexcept'
+// CHECK: FunctionDecl {{.*}} HeapAllocation 'void ()'
+// CHECK: FunctionDecl {{.*}} DeepCallC 'void ()'
+// CHECK: FunctionDecl {{.*}} DeepCallB 'void ()'
+// CHECK: FunctionDecl {{.*}} DeepCallA 'void ()'
+// CHECK: FunctionDecl {{.*}} ExecuteTask 'void ()'
+// CHECK: FunctionDecl {{.*}} FibonacciThrow 'void (int)'
+// CHECK: CXXConstructorDecl {{.*}} DangerStruct 'void ()'
+// CHECK: FunctionDecl {{.*}} InstantiateStruct 'void ()'
