@@ -9,7 +9,7 @@ class VariablesStatisticsVisitor final
     : public clang::RecursiveASTVisitor<VariablesStatisticsVisitor> {
 public:
   explicit VariablesStatisticsVisitor(clang::ASTContext *context)
-    : global_count(0), local_count(0), static_count(0), param_count(0) {}
+      : global_count(0), local_count(0), static_count(0), param_count(0) {}
 
   bool shouldVisitTemplateInstantiations() const { return false; }
 
@@ -21,7 +21,8 @@ public:
 
     if (var->isStaticLocal()) {
       static_count++;
-    } else if (var->isFileVarDecl() && var->getStorageClass() == clang::SC_Static) {
+    } else if (var->isFileVarDecl() && 
+               var->getStorageClass() == clang::SC_Static) {
       static_count++;
     } else if (var->isFileVarDecl()) {
       global_count++;
@@ -38,7 +39,7 @@ public:
   }
 
   void PrintStatistics() {
-    llvm::errs() << "Total count: " 
+    llvm::errs() << "Total count: "
                  << global_count + local_count + static_count + param_count 
                  << "\n";
     llvm::errs() << "Global variables: " << global_count << "\n";
@@ -57,7 +58,7 @@ private:
 class VariablesStatisticsConsumer final : public clang::ASTConsumer {
 public:
   explicit VariablesStatisticsConsumer(clang::ASTContext *context) 
-    : m_visitor(context) {}
+      : m_visitor(context) {}
 
   void HandleTranslationUnit(clang::ASTContext &context) override {
     m_visitor.TraverseDecl(context.getTranslationUnitDecl());
@@ -80,8 +81,8 @@ public:
     return true;
   }
 };
-}
+} // namespace
 
 static clang::FrontendPluginRegistry::Add<VariablesStatisticsAction>
-    X("variables_statistics_plugin", 
+    X("variables_statistics_plugin",
       "Plugin that collects statistics on various types of variables");
