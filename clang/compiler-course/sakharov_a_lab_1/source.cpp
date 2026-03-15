@@ -1,24 +1,27 @@
 #include "clang/AST/ASTConsumer.h"
+#include "clang/AST/Decl.h"
+#include "clang/AST/Expr.h"
 #include "clang/AST/RecursiveASTVisitor.h"
+#include "clang/AST/Stmt.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/FrontendPluginRegistry.h"
 #include "clang/Rewrite/Core/Rewriter.h"
-#include "clang/AST/Decl.h"
-#include "clang/AST/Expr.h"
-#include "clang/AST/Stmt.h"
 #include "llvm/Support/raw_ostream.h"
 
 namespace {
 
-class SimpleMutationAnalyzer : public clang::RecursiveASTVisitor<SimpleMutationAnalyzer> {
+class SimpleMutationAnalyzer
+    : public clang::RecursiveASTVisitor<SimpleMutationAnalyzer> {
 public:
-  SimpleMutationAnalyzer(const clang::VarDecl *Target) : Target(Target), IsMutated(false) {}
+  SimpleMutationAnalyzer(const clang::VarDecl *Target)
+      : Target(Target), IsMutated(false) {}
 
   bool hasMutation() const { return IsMutated; }
 
   // Ловим присваивания: =, +=, -= и т.д.
   bool VisitBinaryOperator(clang::BinaryOperator *BinOp) {
-    if (IsMutated) return true; 
+    if (IsMutated)
+      return true;
     if (BinOp->isAssignmentOp() || BinOp->isCompoundAssignmentOp()) {
       if (isTargetExpr(BinOp->getLHS())) {
         IsMutated = true;
@@ -29,7 +32,8 @@ public:
 
   // Ловим инкременты/декременты: ++, --
   bool VisitUnaryOperator(clang::UnaryOperator *UnOp) {
-    if (IsMutated) return true;
+    if (IsMutated)
+      return true;
     if (UnOp->isIncrementDecrementOp()) {
       if (isTargetExpr(UnOp->getSubExpr())) {
         IsMutated = true;
@@ -43,9 +47,10 @@ private:
   bool IsMutated;
 
   bool isTargetExpr(clang::Expr *E) {
-    if (!E) return false;
+    if (!E)
+      return false;
     E = E->IgnoreParenImpCasts();
-    
+
     // Прямое обращение
     if (auto *DRE = llvm::dyn_cast<clang::DeclRefExpr>(E)) {
       return DRE->getDecl() == Target;
@@ -64,7 +69,8 @@ private:
   }
 };
 
-class AddConstLocalVisitor : public clang::RecursiveASTVisitor<AddConstLocalVisitor> {
+class AddConstLocalVisitor
+    : public clang::RecursiveASTVisitor<AddConstLocalVisitor> {
 public:
   AddConstLocalVisitor(clang::FunctionDecl *funcDecl, clang::Rewriter &rewriter)
       : m_func(funcDecl), m_rewriter(rewriter) {}
@@ -83,7 +89,8 @@ public:
 
     clang::QualType type = var->getType();
 
-    if (type->isReferenceType() && !type.getNonReferenceType().isConstQualified()) {
+    if (type->isReferenceType() &&
+        !type.getNonReferenceType().isConstQualified()) {
       clang::SourceLocation loc = var->getTypeSpecStartLoc();
       if (loc.isValid() && loc.isFileID()) {
         m_rewriter.InsertTextBefore(loc, "const ");
@@ -106,9 +113,11 @@ private:
   clang::Rewriter &m_rewriter;
 };
 
-class AddConstVisitor final : public clang::RecursiveASTVisitor<AddConstVisitor> {
+class AddConstVisitor final
+    : public clang::RecursiveASTVisitor<AddConstVisitor> {
 public:
-  explicit AddConstVisitor(clang::ASTContext *context, clang::Rewriter &rewriter)
+  explicit AddConstVisitor(clang::ASTContext *context,
+                           clang::Rewriter &rewriter)
       : m_context(context), m_rewriter(rewriter) {}
 
   bool VisitFunctionDecl(clang::FunctionDecl *func) {
@@ -128,7 +137,8 @@ private:
 
 class AddConstConsumer final : public clang::ASTConsumer {
 public:
-  explicit AddConstConsumer(clang::ASTContext *context, clang::Rewriter &rewriter)
+  explicit AddConstConsumer(clang::ASTContext *context,
+                            clang::Rewriter &rewriter)
       : m_visitor(context, rewriter) {}
 
   void HandleTranslationUnit(clang::ASTContext &context) override {
@@ -148,7 +158,8 @@ public:
   }
 
   void EndSourceFileAction() override {
-    m_rewriter.getEditBuffer(m_rewriter.getSourceMgr().getMainFileID()).write(llvm::outs());
+    m_rewriter.getEditBuffer(m_rewriter.getSourceMgr().getMainFileID())
+        .write(llvm::outs());
   }
 
   bool ParseArgs(const clang::CompilerInstance &ci,
@@ -162,4 +173,5 @@ private:
 } // namespace
 
 static clang::FrontendPluginRegistry::Add<AddConstAction>
-    X("sakharov_add_const", "Replaces non-const references and pointers with const");
+    X("sakharov_add_const",
+      "Replaces non-const references and pointers with const");
