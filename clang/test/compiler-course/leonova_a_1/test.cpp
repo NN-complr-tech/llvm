@@ -13,7 +13,6 @@ void bad_call() { throws(); }
 void safe() noexcept;
 void good_call() { safe(); }
 
-
 // CHECK: FunctionDecl {{.*}} empty 'void () noexcept'
 // CHECK: FunctionDecl {{.*}} simple 'void () noexcept'
 // CHECK: FunctionDecl {{.*}} throws 'void ()'
