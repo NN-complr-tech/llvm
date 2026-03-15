@@ -33,21 +33,35 @@ public:
   std::vector<ResourceInfo> resources;
   std::map<clang::VarDecl*, size_t> varToResourceIndex;
   
-  void addResource(clang::SourceLocation loc, clang::VarDecl *var, const std::string &type) {
-    // Если переменная уже имеет ресурс, помечаем старый как потенциально потерянный
-    if (var && varToResourceIndex.count(var)) {
-      size_t oldIndex = varToResourceIndex[var];
-      if (!resources[oldIndex].isFreed) {
-        resources[oldIndex].isFreed = true; // не совсем корректно, но для предупреждения
-      }
-    }
+  // void addResource(clang::SourceLocation loc, clang::VarDecl *var, const std::string &type) {
+  //   // Если переменная уже имеет ресурс, помечаем старый как потенциально потерянный
+  //   if (var && varToResourceIndex.count(var)) {
+  //     size_t oldIndex = varToResourceIndex[var];
+  //     if (!resources[oldIndex].isFreed) {
+  //       resources[oldIndex].isFreed = true; // не совсем корректно, но для предупреждения
+  //     }
+  //   }
     
-    size_t index = resources.size();
-    resources.emplace_back(loc, var, type);
-    if (var) {
-      varToResourceIndex[var] = index;
-    }
+  //   size_t index = resources.size();
+  //   resources.emplace_back(loc, var, type);
+  //   if (var) {
+  //     varToResourceIndex[var] = index;
+  //   }
+  // }
+
+  void addResource(clang::SourceLocation loc, clang::VarDecl *var, const std::string &type) {
+  // Если переменная уже имеет ресурс, это потенциальная утечка!
+  // НЕ помечаем старый как freed, просто добавляем новый ресурс
+  // Старый останется в списке и будет обнаружен при проверке
+  
+  size_t index = resources.size();
+  resources.emplace_back(loc, var, type);
+  if (var) {
+    // Если у переменной уже был ресурс, старая запись останется
+    // и будет считаться утечкой (если не freed)
+    varToResourceIndex[var] = index;
   }
+}
   
   void markFreed(clang::Expr *arg, const std::string &deallocType) {
     clang::VarDecl *var = getVarDeclFromExpr(arg);
@@ -283,33 +297,60 @@ clang::VarDecl *findVarDeclForCall(clang::CallExpr *call) {
     return "unknown";
   }
   
-  void checkLeaksInCurrentFunction() {
-    auto &ctx = getCurrentContext();
+  // void checkLeaksInCurrentFunction() {
+  //   auto &ctx = getCurrentContext();
     
-    for (const auto &res : ctx.resources) {
-      if (!res.isFreed) {
-        // Проверяем, не было ли присваивания новой переменной
-        bool found = false;
-        for (const auto &res2 : ctx.resources) {
-          if (res2.variable == res.variable && &res != &res2) {
-            found = true;
-            break;
-          }
-        }
+  //   for (const auto &res : ctx.resources) {
+  //     if (!res.isFreed) {
+  //       // Проверяем, не было ли присваивания новой переменной
+  //       bool found = false;
+  //       for (const auto &res2 : ctx.resources) {
+  //         if (res2.variable == res.variable && &res != &res2) {
+  //           found = true;
+  //           break;
+  //         }
+  //       }
         
-        if (found) continue; // ресурс переприсвоен, мог быть потерян ранее
+  //       if (found) continue; // ресурс переприсвоен, мог быть потерян ранее
         
-        clang::DiagnosticsEngine &DE = m_context->getDiagnostics();
-        unsigned diagID = DE.getCustomDiagID(
-            clang::DiagnosticsEngine::Warning,
-            "Потенциальная утечка %0: ресурс выделен в строке %1 не освобожден");
+  //       clang::DiagnosticsEngine &DE = m_context->getDiagnostics();
+  //       unsigned diagID = DE.getCustomDiagID(
+  //           clang::DiagnosticsEngine::Warning,
+  //           "Потенциальная утечка %0: ресурс выделен в строке %1 не освобожден");
         
-        DE.Report(res.allocLoc, diagID)
-            << res.type
-            << m_sourceManager.getSpellingLineNumber(res.allocLoc);
-      }
+  //       DE.Report(res.allocLoc, diagID)
+  //           << res.type
+  //           << m_sourceManager.getSpellingLineNumber(res.allocLoc);
+  //     }
+  //   }
+  // }
+
+  void checkLeaksInCurrentFunction() {
+  auto &ctx = getCurrentContext();
+  
+  for (const auto &res : ctx.resources) {
+    if (!res.isFreed) {
+      // Убираем эту проверку - она больше не нужна
+      // bool found = false;
+      // for (const auto &res2 : ctx.resources) {
+      //   if (res2.variable == res.variable && &res != &res2) {
+      //     found = true;
+      //     break;
+      //   }
+      // }
+      // if (found) continue; // ресурс переприсвоен, мог быть потерян ранее
+      
+      clang::DiagnosticsEngine &DE = m_context->getDiagnostics();
+      unsigned diagID = DE.getCustomDiagID(
+          clang::DiagnosticsEngine::Warning,
+          "Потенциальная утечка %0: ресурс выделен в строке %1 не освобожден");
+      
+      DE.Report(res.allocLoc, diagID)
+          << res.type
+          << m_sourceManager.getSpellingLineNumber(res.allocLoc);
     }
   }
+}
 };
 
 class PylaevaSConsumer final : public clang::ASTConsumer {
