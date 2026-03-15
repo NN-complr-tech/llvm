@@ -21,7 +21,7 @@ public:
 
     if (var->isStaticLocal()) {
       static_count++;
-    } else if (var->isFileVarDecl() && 
+    } else if (var->isFileVarDecl() &&
                var->getStorageClass() == clang::SC_Static) {
       static_count++;
     } else if (var->isFileVarDecl()) {
@@ -40,7 +40,7 @@ public:
 
   void PrintStatistics() {
     llvm::errs() << "Total count: "
-                 << global_count + local_count + static_count + param_count 
+                 << global_count + local_count + static_count + param_count
                  << "\n";
     llvm::errs() << "Global variables: " << global_count << "\n";
     llvm::errs() << "Local variables: " << local_count << "\n";
@@ -57,7 +57,7 @@ private:
 
 class VariablesStatisticsConsumer final : public clang::ASTConsumer {
 public:
-  explicit VariablesStatisticsConsumer(clang::ASTContext *context) 
+  explicit VariablesStatisticsConsumer(clang::ASTContext *context)
       : m_visitor(context) {}
 
   void HandleTranslationUnit(clang::ASTContext &context) override {
