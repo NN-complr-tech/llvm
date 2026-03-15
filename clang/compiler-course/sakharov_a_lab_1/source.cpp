@@ -41,7 +41,7 @@ public:
     }
     return true;
   }
-  
+
 private:
   const clang::VarDecl *Target;
   bool IsMutated;
