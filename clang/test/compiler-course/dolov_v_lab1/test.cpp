@@ -1,5 +1,5 @@
 // RUN: %clang_cc1 -load %llvmshlibdir/OverrideCheckPlugin_Dolov_Vyacheslav_FIIT3_ClangAST%pluginext \
-// RUN: -plugin dolov_v_lab1 -fsyntax-only -verify %s
+// RUN: -plugin dolov_v_lab1 -Wno-inconsistent-missing-override -fsyntax-only -verify %s
 
 class Base {
 public:
