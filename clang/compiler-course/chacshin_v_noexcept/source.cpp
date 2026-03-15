@@ -25,7 +25,6 @@ public:
     return true;
   }
   bool VisitCXXDynamicCastExpr(clang::CXXDynamicCastExpr *DynCast) {
-    // Проверяем тип, который написан в скобках dynamic_cast<Type>(...)
     clang::QualType T = DynCast->getTypeAsWritten();
     if (T->isReferenceType()) {
       DetectedThrow = true;
@@ -101,7 +100,6 @@ public:
           Proto->getReturnType(), Proto->getParamTypes(), EPI);
       FD->setType(NewType);
 
-      // Используем errs() для надежности вывода в тестах
       llvm::errs() << "Function " << FD->getNameAsString()
                    << " marked noexcept\n";
     } else {
@@ -120,7 +118,6 @@ public:
   explicit ChacshinNoexceptConsumer(clang::ASTContext *Ctx) : Visitor(Ctx) {}
 
   void HandleTranslationUnit(clang::ASTContext &Ctx) override {
-    // Используем errs()
     llvm::errs() << "Plugin is running!\n";
     for (auto *D : Ctx.getTranslationUnitDecl()->decls())
       Visitor.TraverseDecl(D);
@@ -142,7 +139,6 @@ public:
     return true;
   }
 
-  // ИСПРАВЛЕНО: Меняем на MainAction
   ActionType getActionType() override { return ReplaceAction; }
 };
 
