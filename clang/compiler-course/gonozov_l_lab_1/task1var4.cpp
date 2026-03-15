@@ -5,29 +5,27 @@
 #include "llvm/Support/raw_ostream.h"
 
 namespace {
-class VariablesStatisticsVisitor final : public clang::RecursiveASTVisitor<VariablesStatisticsVisitor> {
+class VariablesStatisticsVisitor final
+    : public clang::RecursiveASTVisitor<VariablesStatisticsVisitor> {
 public:
-  explicit VariablesStatisticsVisitor(clang::ASTContext *context) : m_context(context), 
-    global_count(0), local_count(0), static_count(0), param_count(0) {}
+  explicit VariablesStatisticsVisitor(clang::ASTContext *context)
+    : global_count(0), local_count(0), static_count(0), param_count(0) {}
 
   bool shouldVisitTemplateInstantiations() const { return false; }
-    
+
   bool VisitVarDecl(clang::VarDecl *var) {
-    if (var != var->getCanonicalDecl())
-      return true;
     if (llvm::isa<clang::ParmVarDecl>(var))
+      return true;
+    if (var != var->getCanonicalDecl())
       return true;
 
     if (var->isStaticLocal()) {
       static_count++;
-    }
-    else if (var->getStorageClass() == clang::SC_Static) {
+    } else if (var->isFileVarDecl() && var->getStorageClass() == clang::SC_Static) {
       static_count++;
-    }
-    else if (var->isFileVarDecl()) {
+    } else if (var->isFileVarDecl()) {
       global_count++;
-    }
-    else if (var->isLocalVarDecl()) {
+    } else if (var->isLocalVarDecl()) {
       local_count++;
     }
 
@@ -38,10 +36,11 @@ public:
     param_count++;
     return true;
   }
-  
+
   void PrintStatistics() {
-    llvm::errs() << "Total count: " << global_count + local_count +
-        static_count + param_count << "\n";
+    llvm::errs() << "Total count: " 
+                 << global_count + local_count + static_count + param_count 
+                 << "\n";
     llvm::errs() << "Global variables: " << global_count << "\n";
     llvm::errs() << "Local variables: " << local_count << "\n";
     llvm::errs() << "Static variables: " << static_count << "\n";
@@ -49,7 +48,6 @@ public:
   }
 
 private:
-  clang::ASTContext *m_context;
   size_t global_count;
   size_t local_count;
   size_t static_count;
@@ -58,7 +56,8 @@ private:
 
 class VariablesStatisticsConsumer final : public clang::ASTConsumer {
 public:
-  explicit VariablesStatisticsConsumer(clang::ASTContext *context) : m_visitor(context) {}
+  explicit VariablesStatisticsConsumer(clang::ASTContext *context) 
+    : m_visitor(context) {}
 
   void HandleTranslationUnit(clang::ASTContext &context) override {
     m_visitor.TraverseDecl(context.getTranslationUnitDecl());
@@ -81,7 +80,8 @@ public:
     return true;
   }
 };
-} // namespace
+}
 
 static clang::FrontendPluginRegistry::Add<VariablesStatisticsAction>
-    X("variables_statistics_plugin", "Plugin that collects statistics on various types of variables");
+    X("variables_statistics_plugin", 
+      "Plugin that collects statistics on various types of variables");

@@ -6,10 +6,10 @@
 // CHECK-NEXT: Static variables: 6
 // CHECK-NEXT: Function parameters: 6
 
-[[nodiscard]] bool isEven(int value) noexcept { return value % 2 == 0; } // Function parameters++ (1)
+bool isEven(int value) noexcept { return value % 2 == 0; } // Function parameters++ (1)
 
 template<typename F>
-static F A(T1 arg1,) { // Function parameters++ (2)
+static F A(F arg1) { // Function parameters++ (2)
     static F cache; // Static variables++ (1)
     return cache;
 }
@@ -24,7 +24,7 @@ class Base
     double f;
     public:
         Base(double f_): f(f_) {} // Function parameters++ 4
-}
+};
 
 extern int g; // Global variables++ 1
 int g = 2; // объявлена выше
@@ -63,3 +63,4 @@ int main(int argc, char** argv) { // Function parameters += 2:  5, 6
     
     return 0;
 }
+
