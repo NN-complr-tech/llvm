@@ -24,11 +24,54 @@ static std::string castKindToString(ReplacementCastKind kind) {
   return "static_cast";
 }
 
+static bool requiresConstCast(clang::QualType source, clang::QualType target) {
+  if (source->isPointerType() && target->isPointerType()) {
+    source = source->getPointeeType();
+    target = target->getPointeeType();
+  }
+
+  const bool constChanged = source.isConstQualified() != target.isConstQualified();
+  const bool volatileChanged = source.isVolatileQualified() != target.isVolatileQualified();
+
+  return constChanged || volatileChanged;
+}
+
+static bool isVoidPointerConversion(clang::QualType source, clang::QualType target) {
+  const bool srcVoidPtr = source->isPointerType() && source->getPointeeType()->isVoidType();
+  const bool dstVoidPtr = target->isPointerType() && target->getPointeeType()->isVoidType();
+
+  return srcVoidPtr || dstVoidPtr;
+}
+
 static ReplacementCastKind classifyCast(const clang::CStyleCastExpr *expr) {
   const clang::CastKind kind = expr->getCastKind();
 
   const clang::QualType sourceType = expr->getSubExpr()->getType();
   const clang::QualType targetType = expr->getType();
+
+  if (kind == clang::CK_IntegralToPointer ||
+      kind == clang::CK_PointerToIntegral ||
+      kind == clang::CK_ReinterpretMemberPointer) {
+    return ReplacementCastKind::Reinterpret;
+  }
+
+  if (kind == clang::CK_BitCast ||
+      kind == clang::CK_LValueBitCast ||
+      kind == clang::CK_LValueToRValueBitCast) {
+    if (isVoidPointerConversion(sourceType, targetType)) {
+      return ReplacementCastKind::Static;
+    }
+
+    return ReplacementCastKind::Reinterpret;
+  }
+
+  if (kind == clang::CK_NoOp) {
+    if (requiresConstCast(sourceType, targetType)) {
+      return ReplacementCastKind::Const;
+    }
+
+    return ReplacementCastKind::Static;
+  }
 
   return ReplacementCastKind::Static;
 }
