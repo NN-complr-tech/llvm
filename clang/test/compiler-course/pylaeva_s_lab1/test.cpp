@@ -55,8 +55,8 @@ int* leak_new2 = new int[100];
 
 // Разные области видимости с одинаковыми именами переменных
 
+// CHECK-DAG: warning: potential memory leak detected at line [[#]]
 void scope_test1() {
-    // CHECK-DAG: warning: potential memory leak detected at line [[#]]
     int* p = (int*)malloc(10);  
     {
         int* p = (int*)malloc(20);  
@@ -64,49 +64,51 @@ void scope_test1() {
     }  
 }
 
+// CHECK-DAG: warning: potential memory leak detected at line [[#]]
 void scope_test2() {
     int* p = (int*)malloc(10);
     free(p);  
     {
-        // CHECK-DAG: warning: potential memory leak detected at line [[#]]
+        
         int* p = (int*)malloc(20);
     }
 }
 
 // Тесты на перезапись указателей
 
+// CHECK-DAG: warning: potential memory leak detected at line [[#]]
 void overwrite_test() {
-    // CHECK-DAG: warning: potential memory leak detected at line [[#]]
     int* p = (int*)malloc(10);
     p = (int*)malloc(20); 
     free(p); 
 }
 
+// CHECK-DAG: warning: potential memory leak detected at line [[#]]
 void overwrite_correct() {
     int* p1 = (int*)malloc(10);
     int* p2 = (int*)malloc(20);
     p1 = p2; 
     free(p1);
-    // CHECK-DAG: warning: potential memory leak detected at line [[#]]
+    
 }
 
 // Выделение памяти в сложном выражении
+// CHECK-DAG: warning: potential memory leak detected at line [[#]]
 void complex_expression_leak() {
-    // CHECK-DAG: warning: potential memory leak detected at line [[#]]
     int* p = (int*)malloc(sizeof(int) * (10 + 20));
 }
 
 // Множественное выделение в одной строке
+// CHECK-DAG: warning: potential memory leak detected at line [[#]]
 void multiple_allocation_same_line() {
-    // CHECK-DAG: warning: potential memory leak detected at line [[#]]
     int* a = (int*)malloc(10), *b = (int*)malloc(20);
     free(a); 
 }
 
 // Утечка памяти в if
+// CHECK-DAG: warning: potential memory leak detected at line [[#]]
 void if_leak(int x) {
     if (x > 0) {
-        // CHECK-DAG: warning: potential memory leak detected at line [[#]]
         int* p = (int*)malloc(10);
     }    
 }
