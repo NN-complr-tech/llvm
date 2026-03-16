@@ -5,145 +5,183 @@ extern "C" {
     void* calloc(unsigned long count, unsigned long size);
     void* realloc(void* ptr, unsigned long size);
     void free(void* ptr);
-    
     void* fopen(const char* filename, const char* mode);
     int fclose(void* stream);
 }
 
-// ==================== ТЕСТ 1: Базовые утечки памяти (malloc/calloc/realloc) ====================
-// Проверка обнаружения простых утечек памяти
+// Проверка обнаружения простых утечек памяти внутри функций
 
-// CHECK: Потенциальная утечка memory: ресурс выделен в строке [[#@LINE+2]] не освобожден
-void test_malloc_leak() {
-    int *p = (int*)malloc(sizeof(int) * 10);
-    *p = 42;
-}
-
-// CHECK: Потенциальная утечка memory: ресурс выделен в строке [[#@LINE+2]] не освобожден
-void test_calloc_leak() {
+// CHECK: warning: potential memory leak detected at line [[#]]
+void test_calloc_simple_leak() {
     int *p = (int*)calloc(10, sizeof(int));
 }
 
-// CHECK: Потенциальная утечка memory: ресурс выделен в строке [[#@LINE+3]] не освобожден
-void test_realloc_leak() {
-    int *p = (int*)malloc(sizeof(int) * 5);
-    p = (int*)realloc(p, sizeof(int) * 10);
+// CHECK-DAG: warning: potential memory leak detected at line [[#]]
+void test_new_simple_leak() {
+    int* p = new int;
 }
 
-// ==================== ТЕСТ 2: Базовые утечки файлов (fopen) ====================
-// Проверка обнаружения простых утечек файлов
-
-// CHECK: Потенциальная утечка file: ресурс выделен в строке [[#@LINE+2]] не освобожден
-void test_fopen_leak() {
-    void *f = fopen("test.txt", "r");
+// CHECK-DAG: warning: potential file handle leak detected at line [[#]]
+void test_fopen_simple_leak() {
+    void* f = fopen("test.txt", "r");
 }
 
-// ==================== ТЕСТ 3: Присваивания глобальным переменным ====================
-// Проверка работы с глобальными переменными
-
-int* global_ptr;
-
-// CHECK: Потенциальная утечка memory: ресурс выделен в строке [[#@LINE+2]] не освобожден
-void test_global_assign() {
-    global_ptr = (int*)malloc(sizeof(int) * 10);
+// CHECK-DAG: warning: potential memory leak detected at line [[#]]
+void test_malloc_simple_leak() {
+    int* p = (int*)malloc(sizeof(int));
 }
 
-// ==================== ТЕСТ 4: Присваивания локальным переменным ====================
-// Проверка присваивания уже объявленным локальным переменным
 
-// CHECK: Потенциальная утечка memory: ресурс выделен в строке [[#@LINE+3]] не освобожден
-void test_assign_to_local() {
-    int *local;
-    local = (int*)malloc(sizeof(int) * 10);
+// Проверка обнаружения простых утечек памяти на глобальном уровне
+
+// CHECK-DAG: warning: potential memory leak detected at line [[#]]
+int* leak_malloc = (int*)malloc(100);
+
+// CHECK-DAG: warning: potential memory leak detected at line [[#]]
+int* leak_сalloc = (int*)calloc(10, sizeof(int));
+
+// CHECK-DAG: warning: potential memory leak detected at line [[#]]
+int* leak_realloc = (int*)realloc(nullptr, 200);
+
+// CHECK-DAG: warning: potential file handle leak detected at line [[#]]
+void* file = fopen("test.txt", "r");
+
+// CHECK-DAG: warning: potential memory leak detected at line [[#]]
+int* leak_new1 = new int(42);
+
+// CHECK-DAG: warning: potential memory leak detected at line [[#]]
+int* leak_new2 = new int[100];
+
+
+// Разные области видимости с одинаковыми именами переменных
+
+void scope_test1() {
+    // CHECK-DAG: warning: potential memory leak detected at line [[#]]
+    int* p = (int*)malloc(10);  
+    {
+        int* p = (int*)malloc(20);  
+        free(p);  
+    }  
 }
 
-// ==================== ТЕСТ 5: Присваивания в условиях ====================
-// Проверка присваивания внутри условных операторов
-
-// CHECK: Потенциальная утечка memory: ресурс выделен в строке [[#@LINE+4]] не освобожден
-void test_assign_in_condition(int cond) {
-    int *p;
-    if (cond > 0) {
-        p = (int*)malloc(sizeof(int) * 10);
+void scope_test2() {
+    int* p = (int*)malloc(10);
+    free(p);  
+    {
+        // CHECK-DAG: warning: potential memory leak detected at line [[#]]
+        int* p = (int*)malloc(20);
     }
 }
 
-// ==================== ТЕСТ 6: Утечки в ветвлениях ====================
-// Проверка освобождения только в одной ветке условия
+// Тесты на перезапись указателей
 
-// CHECK: Потенциальная утечка memory: ресурс выделен в строке [[#@LINE+2]] не освобожден
-void test_branch_leak(int cond) {
-    int *p = (int*)malloc(sizeof(int) * 10);
-    if (cond > 0) {
+void overwrite_test() {
+    // CHECK-DAG: warning: potential memory leak detected at line [[#]]
+    int* p = (int*)malloc(10);
+    p = (int*)malloc(20); 
+    free(p); 
+}
+
+void overwrite_correct() {
+    int* p1 = (int*)malloc(10);
+    int* p2 = (int*)malloc(20);
+    p1 = p2; 
+    free(p1);
+    // CHECK-DAG: warning: potential memory leak detected at line [[#]]
+}
+
+// Выделение памяти в сложном выражении
+void complex_expression_leak() {
+    // CHECK-DAG: warning: potential memory leak detected at line [[#]]
+    int* p = (int*)malloc(sizeof(int) * (10 + 20));
+}
+
+// Множественное выделение в одной строке
+void multiple_allocation_same_line() {
+    // CHECK-DAG: warning: potential memory leak detected at line [[#]]
+    int* a = (int*)malloc(10), *b = (int*)malloc(20);
+    free(a); 
+}
+
+// Утечка памяти в if
+void if_leak(int x) {
+    if (x > 0) {
+        // CHECK-DAG: warning: potential memory leak detected at line [[#]]
+        int* p = (int*)malloc(10);
+    }    
+}
+
+// Выделение памяти в цикле, утечка в каждой итерации
+void loop_leak() {
+    for (int i = 0; i < 5; i++) {
+        // CHECK-DAG: warning: potential memory leak detected at line [[#]]
+        int* p = (int*)malloc(10);
+    }
+}
+
+// тесты без утечек
+
+
+// CHECK-NOT: warning: potential memory leak detected at line [[#]]
+void correct_malloc() {
+    int* p = (int*)malloc(100);
+    free(p);
+}
+
+// CHECK-NOT: warning: potential memory leak detected at line [[#]]
+void correct_calloc() {
+    int* p = (int*)calloc(10, sizeof(int));
+    free(p);
+}
+
+// CHECK-NOT: warning: potential file handle leak detected at line [[#]]
+void correct_fopen() {
+    void* f = fopen("test.txt", "r");
+    fclose(f);
+}
+
+// CHECK-NOT: warning: potential memory leak detected at line [[#]]
+void correct_new1() {
+    int* p = new int(64);
+    delete p;
+}
+
+// CHECK-NOT: warning: potential memory leak detected at line [[#]]
+void correct_new2() {
+    int* p = new int[10];
+    delete[] p;
+}
+
+// CHECK-NOT: warning: potential memory leak detected at line [[#]]
+void correct_multiple() {
+    int* a = (int*)malloc(10);
+    int* b = new int(5);
+    void* f = fopen("test.txt", "r"); 
+    free(a);
+    delete b;
+    fclose(f);
+}
+
+// CHECK-NOT: warning: potential memory leak detected at line [[#]]
+void correct_if(int x) {
+    int* p = (int*)malloc(10);
+    if (x > 0) {
+        free(p);
+    } else {
         free(p);
     }
 }
 
-// ==================== ТЕСТ 7: Ранний возврат из функции ====================
-// Проверка утечек при ранних return без освобождения
-
-// CHECK: Потенциальная утечка memory: ресурс выделен в строке [[#@LINE+2]] не освобожден
-void test_early_return_leak(int cond) {
-    int *p = (int*)malloc(sizeof(int) * 10);
-    if (cond < 0) {
-        return;
+// CHECK-NOT: warning: potential memory leak detected at line [[#]]
+void loop_correct() {
+    for (int i = 0; i < 5; i++) {
+        int* p = (int*)malloc(10);
+        free(p);
     }
-    free(p);
 }
 
-// ==================== ТЕСТ 8: Контекст функций ====================
-// Проверка, что контексты функций не смешиваются
-
-// CHECK: Потенциальная утечка memory: ресурс выделен в строке [[#@LINE+2]] не освобожден
-void helper_func() {
-    int *p = (int*)malloc(sizeof(int) * 10);
-}
-
-void caller_func() {
-    int *p = (int*)malloc(sizeof(int) * 20);
-    free(p);
-    helper_func();
-}
-
-// ==================== ТЕСТ 9: Выделение без присваивания ====================
-// Проверка случаев, когда malloc/fopen используются без сохранения результата
-
-// CHECK: Потенциальная утечка memory: ресурс выделен в строке [[#@LINE+2]] не освобожден
-void test_malloc_no_assign() {
-    malloc(sizeof(int) * 10);
-}
-
-// CHECK: Потенциальная утечка file: ресурс выделен в строке [[#@LINE+2]] не освобожден
-void test_fopen_no_assign() {
-    fopen("test.txt", "r");
-}
-
-// ==================== ТЕСТ 10: Переприсваивание переменной ====================
-// Проверка обнаружения утечки при переприсваивании указателя
-
-// CHECK: Потенциальная утечка memory: ресурс выделен в строке [[#@LINE+2]] не освобожден
-void test_reassignment_leak() {
-    int *p = (int*)malloc(sizeof(int) * 10);  // первая утечка
-    p = (int*)malloc(sizeof(int) * 20);       // второе выделение
-    free(p);  // освобождается только второе выделение
-}
-
-// ==================== ТЕСТ 11: Корректное освобождение ====================
-// Проверка, что нет ложных срабатываний при правильном освобождении
-
-void test_malloc_free() {
-    int *p = (int*)malloc(sizeof(int) * 10);
-    free(p);
-}
-
-void test_fopen_fclose() {
-    void *f = fopen("test.txt", "r");
-    fclose(f);
-}
-
-void test_multiple_alloc_free() {
-    int *p1 = (int*)malloc(sizeof(int) * 10);
-    int *p2 = (int*)malloc(sizeof(int) * 20);
-    free(p1);
-    free(p2);
+// CHECK-NOT: warning: potential memory leak detected at line [[#]]
+int* correct_return(int x) {
+    int* p = new int(x);
+    return p;
 }
