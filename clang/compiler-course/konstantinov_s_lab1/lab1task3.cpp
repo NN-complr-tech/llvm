@@ -2,6 +2,8 @@
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/FrontendPluginRegistry.h"
+#include "clang/Lex/Lexer.h"
+#include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/raw_ostream.h"
 
 namespace {
@@ -76,43 +78,84 @@ static ReplacementCastKind classifyCast(const clang::CStyleCastExpr *expr) {
   return ReplacementCastKind::Static;
 }
 
-class CastRewriteVisitor final : public clang::RecursiveASTVisitor<CastRewriteVisitor> {
+class CastRewriteVisitor
+    final : public clang::RecursiveASTVisitor<CastRewriteVisitor> {
 public:
-  explicit CastRewriteVisitor(clang::ASTContext *context) : m_context(context) {}
-  bool VisitFunctionDecl(clang::FunctionDecl *func) {
-    func->dump();
+  CastRewriteVisitor(clang::ASTContext *astContext, clang::Rewriter &rewriter)
+      : context(astContext), sourceRewriter(rewriter) {}
+
+  bool shouldTraversePostOrder() const { return true; }
+
+  bool VisitCStyleCastExpr(clang::CStyleCastExpr *expr) {
+    const ReplacementCastKind replacementKind = classifyCast(expr);
+
+    const std::string castKeyword = castKindToString(replacementKind);
+
+    const std::string targetType =
+        expr->getTypeAsWritten().getAsString(context->getPrintingPolicy());
+
+    clang::Expr *innerExpr = expr->getSubExprAsWritten();
+
+    const clang::CharSourceRange innerRange =
+        clang::CharSourceRange::getTokenRange(innerExpr->getSourceRange());
+
+    const std::string innerText = sourceRewriter.getRewrittenText(innerRange);
+
+    const std::string replacement =
+        castKeyword + "<" + targetType + ">(" + innerText + ")";
+
+    const clang::CharSourceRange castRange =
+        clang::CharSourceRange::getTokenRange(expr->getSourceRange());
+
+    sourceRewriter.ReplaceText(castRange, replacement);
+
     return true;
   }
 
 private:
-  clang::ASTContext *m_context;
+  clang::ASTContext *context;
+  clang::Rewriter &sourceRewriter;
 };
 
-class CastRewriteConsumer final : public clang::ASTConsumer {
+class CastRewriteConsumer : public clang::ASTConsumer {
 public:
-  explicit CastRewriteConsumer(clang::ASTContext *context) : m_visitor(context) {}
+  CastRewriteConsumer(clang::ASTContext *astContext, clang::Rewriter &rewriter)
+      : visitor(astContext, rewriter) {}
 
   void HandleTranslationUnit(clang::ASTContext &context) override {
-    m_visitor.TraverseDecl(context.getTranslationUnitDecl());
+    visitor.TraverseDecl(context.getTranslationUnitDecl());
   }
 
 private:
-  CastRewriteVisitor m_visitor;
+  CastRewriteVisitor visitor;
 };
 
-class CastRewriteAction final : public clang::PluginASTAction {
+class CastRewritePluginAction : public clang::PluginASTAction {
 public:
   std::unique_ptr<clang::ASTConsumer>
-  CreateASTConsumer(clang::CompilerInstance &ci, llvm::StringRef) override {
-    return std::make_unique<CastRewriteConsumer>(&ci.getASTContext());
+  CreateASTConsumer(clang::CompilerInstance &compiler,
+                    llvm::StringRef) override {
+    rewriter.setSourceMgr(compiler.getSourceManager(), compiler.getLangOpts());
+
+    return std::make_unique<CastRewriteConsumer>(&compiler.getASTContext(),
+                                                 rewriter);
   }
 
-  bool ParseArgs(const clang::CompilerInstance &ci,
-                 const std::vector<std::string> &args) override {
+  bool ParseArgs(const clang::CompilerInstance &,
+                 const std::vector<std::string> &) override {
     return true;
   }
+
+  void EndSourceFileAction() override {
+    clang::SourceManager &sourceManager = rewriter.getSourceMgr();
+
+    rewriter.getEditBuffer(sourceManager.getMainFileID()).write(llvm::outs());
+  }
+
+private:
+  clang::Rewriter rewriter;
 };
 } // namespace
 
-static clang::FrontendPluginRegistry::Add<CastRewriteAction>
-    X("CastRewrite_plugin", "Description plugin");
+static clang::FrontendPluginRegistry::Add<CastRewritePluginAction>
+    X("CastRewrite_plugin", "Replace C-style casts with C++ casts");
