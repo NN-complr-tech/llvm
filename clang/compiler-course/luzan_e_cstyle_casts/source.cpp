@@ -2,15 +2,18 @@
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/FrontendPluginRegistry.h"
-#include "llvm/Support/raw_ostream.h"
-#include "clang/Rewrite/Core/Rewriter.h"
 #include "clang/Lex/Lexer.h"
+#include "clang/Rewrite/Core/Rewriter.h"
+#include "llvm/Support/raw_ostream.h"
 
 namespace {
-class LuzanECstyleCastsVisitor final : public clang::RecursiveASTVisitor<LuzanECstyleCastsVisitor> {
+class LuzanECstyleCastsVisitor final
+    : public clang::RecursiveASTVisitor<LuzanECstyleCastsVisitor> {
 public:
-  explicit LuzanECstyleCastsVisitor(clang::ASTContext *context, clang::Rewriter &rewriter_) : m_context(context), rewriter(rewriter_)  {}
-  
+  explicit LuzanECstyleCastsVisitor(clang::ASTContext *context,
+                                    clang::Rewriter &rewriter_)
+      : m_context(context), rewriter(rewriter_) {}
+
   /// for nested casts
   bool TraverseCStyleCastExpr(clang::CStyleCastExpr *expr) {
     TraverseStmt(expr->getSubExpr());
@@ -18,29 +21,31 @@ public:
     return true;
   }
 
-  
-bool VisitCStyleCastExpr(clang::CStyleCastExpr *expr) {
+  bool VisitCStyleCastExpr(clang::CStyleCastExpr *expr) {
     /// determine which cast type is it
     std::string castName = getCastName(expr->getCastKind());
     /// get the target type of cast
     std::string targetType = expr->getTypeAsWritten().getAsString();
     /// get positions of token/text to rewrite
-    clang::CharSourceRange range = clang::CharSourceRange::getTokenRange(expr->getSourceRange());
+    clang::CharSourceRange range =
+        clang::CharSourceRange::getTokenRange(expr->getSourceRange());
 
     /// get casting expression
     clang::Expr *subExpr = expr->getSubExpr();
     /// get range of casting expr / subexpr
-    clang::CharSourceRange subRange = clang::CharSourceRange::getTokenRange(subExpr->getSourceRange());
+    clang::CharSourceRange subRange =
+        clang::CharSourceRange::getTokenRange(subExpr->getSourceRange());
     /// get rw subexpr text
-    std::string subExprText = rewriter.getRewrittenText(subRange); 
+    std::string subExprText = rewriter.getRewrittenText(subRange);
 
     /// cpp style cast
-    std::string cpp_cast = castName + "<" + targetType + ">(" + subExprText + ")";
+    std::string cpp_cast =
+        castName + "<" + targetType + ">(" + subExprText + ")";
 
     rewriter.ReplaceText(range, cpp_cast);
 
     return true;
-}
+  }
 
 private:
   clang::ASTContext *m_context;
@@ -70,8 +75,9 @@ private:
 
 class LuzanECstyleCastsConsumer final : public clang::ASTConsumer {
 public:
-  explicit LuzanECstyleCastsConsumer(clang::ASTContext *context, clang::Rewriter &rewriter) 
-            : m_visitor(context,rewriter) {}
+  explicit LuzanECstyleCastsConsumer(clang::ASTContext *context,
+                                     clang::Rewriter &rewriter)
+      : m_visitor(context, rewriter) {}
 
   void HandleTranslationUnit(clang::ASTContext &context) override {
     m_visitor.TraverseDecl(context.getTranslationUnitDecl());
@@ -85,8 +91,9 @@ class LuzanECstyleCastsAction final : public clang::PluginASTAction {
 public:
   std::unique_ptr<clang::ASTConsumer>
   CreateASTConsumer(clang::CompilerInstance &ci, llvm::StringRef) override {
-    rewriter.setSourceMgr(ci.getSourceManager(),ci.getLangOpts());
-    return std::make_unique<LuzanECstyleCastsConsumer>(&ci.getASTContext(), rewriter);
+    rewriter.setSourceMgr(ci.getSourceManager(), ci.getLangOpts());
+    return std::make_unique<LuzanECstyleCastsConsumer>(&ci.getASTContext(),
+                                                       rewriter);
   }
 
   bool ParseArgs(const clang::CompilerInstance &ci,
@@ -95,15 +102,16 @@ public:
   }
 
   void EndSourceFileAction() override {
-    rewriter.getEditBuffer(rewriter.getSourceMgr().getMainFileID()).write(llvm::outs());
+    rewriter.getEditBuffer(rewriter.getSourceMgr().getMainFileID())
+        .write(llvm::outs());
   }
 
   // void EndSourceFileAction() override {
   //   rewriter.getEditBuffer(rewriter.getSourceMgr().getMainFileID()).write(llvm::outs());
   // }
 
-  private:
-    clang::Rewriter rewriter;
+private:
+  clang::Rewriter rewriter;
 };
 } // namespace
 
