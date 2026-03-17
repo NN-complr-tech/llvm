@@ -7,11 +7,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 namespace {
-  enum class ReplacementCastKind {
-  Static,
-  Const,
-  Reinterpret
-};
+enum class ReplacementCastKind { Static, Const, Reinterpret };
 
 static std::string castKindToString(ReplacementCastKind kind) {
   switch (kind) {
@@ -32,15 +28,20 @@ static bool requiresConstCast(clang::QualType source, clang::QualType target) {
     target = target->getPointeeType();
   }
 
-  const bool constChanged = source.isConstQualified() != target.isConstQualified();
-  const bool volatileChanged = source.isVolatileQualified() != target.isVolatileQualified();
+  const bool constChanged =
+      source.isConstQualified() != target.isConstQualified();
+  const bool volatileChanged =
+      source.isVolatileQualified() != target.isVolatileQualified();
 
   return constChanged || volatileChanged;
 }
 
-static bool isVoidPointerConversion(clang::QualType source, clang::QualType target) {
-  const bool srcVoidPtr = source->isPointerType() && source->getPointeeType()->isVoidType();
-  const bool dstVoidPtr = target->isPointerType() && target->getPointeeType()->isVoidType();
+static bool isVoidPointerConversion(clang::QualType source,
+                                    clang::QualType target) {
+  const bool srcVoidPtr =
+      source->isPointerType() && source->getPointeeType()->isVoidType();
+  const bool dstVoidPtr =
+      target->isPointerType() && target->getPointeeType()->isVoidType();
 
   return srcVoidPtr || dstVoidPtr;
 }
@@ -57,8 +58,7 @@ static ReplacementCastKind classifyCast(const clang::CStyleCastExpr *expr) {
     return ReplacementCastKind::Reinterpret;
   }
 
-  if (kind == clang::CK_BitCast ||
-      kind == clang::CK_LValueBitCast ||
+  if (kind == clang::CK_BitCast || kind == clang::CK_LValueBitCast ||
       kind == clang::CK_LValueToRValueBitCast) {
     if (isVoidPointerConversion(sourceType, targetType)) {
       return ReplacementCastKind::Static;
@@ -78,8 +78,8 @@ static ReplacementCastKind classifyCast(const clang::CStyleCastExpr *expr) {
   return ReplacementCastKind::Static;
 }
 
-class CastRewriteVisitor
-    final : public clang::RecursiveASTVisitor<CastRewriteVisitor> {
+class CastRewriteVisitor final
+    : public clang::RecursiveASTVisitor<CastRewriteVisitor> {
 public:
   CastRewriteVisitor(clang::ASTContext *astContext, clang::Rewriter &rewriter)
       : context(astContext), sourceRewriter(rewriter) {}
