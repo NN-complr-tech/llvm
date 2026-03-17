@@ -158,4 +158,4 @@ private:
 } // namespace
 
 static clang::FrontendPluginRegistry::Add<CastRewritePluginAction>
-    X("CastRewrite_plugin", "Replace C-style casts with C++ casts");
+    X("cast_rewrite_plugin", "Replace C-style casts with C++ casts");
