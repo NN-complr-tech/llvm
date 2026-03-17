@@ -106,10 +106,6 @@ public:
         .write(llvm::outs());
   }
 
-  // void EndSourceFileAction() override {
-  //   rewriter.getEditBuffer(rewriter.getSourceMgr().getMainFileID()).write(llvm::outs());
-  // }
-
 private:
   clang::Rewriter rewriter;
 };
