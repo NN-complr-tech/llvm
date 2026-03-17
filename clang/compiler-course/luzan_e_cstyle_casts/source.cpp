@@ -112,4 +112,5 @@ private:
 } // namespace
 
 static clang::FrontendPluginRegistry::Add<LuzanECstyleCastsAction>
-    X("luzan_e_cstyle_casts", "Description plugin");
+    X("luzan_e_cstyle_casts",
+      "Plugin for replacing c-style casts with cpp-style casts");
