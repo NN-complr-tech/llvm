@@ -1,7 +1,7 @@
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/InstIterator.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Intrinsics.h"
-#include "llvm/IR/InstIterator.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
 #include "llvm/Support/Compiler.h"
@@ -14,19 +14,17 @@ class DecomposeFRemPass : public PassInfoMixin<DecomposeFRemPass> {
 public:
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM) {
     bool Changed = false;
-
     SmallVector<Instruction *, 8> ToReplace;
     for (Instruction &I : instructions(F)) {
       unsigned Op = I.getOpcode();
-      if (Op == Instruction::FRem || Op == Instruction::SRem || Op == Instruction::URem)
+      if (Op == Instruction::FRem || Op == Instruction::SRem ||
+          Op == Instruction::URem)
         ToReplace.push_back(&I);
     }
-
     for (Instruction *I : ToReplace) {
       replaceRem(I);
       Changed = true;
     }
-
     return Changed ? PreservedAnalyses::none() : PreservedAnalyses::all();
   }
 
@@ -36,7 +34,6 @@ private:
     Value *A = Rem->getOperand(0);
     Value *B = Rem->getOperand(1);
     Type *Ty = Rem->getType();
-
     switch (Rem->getOpcode()) {
     case Instruction::FRem: {
       Value *Div = Builder.CreateFDiv(A, B);
@@ -63,9 +60,8 @@ private:
       break;
     }
     default:
-      llvm_unreachable("Unknown remainder instruction");
+      llvm_unreachable("unknown remainder instruction");
     }
-
     Rem->eraseFromParent();
   }
 };
