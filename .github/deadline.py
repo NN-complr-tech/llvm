@@ -9,7 +9,7 @@ def main():
     moscow_tz = ZoneInfo("Europe/Moscow")
     deadlines = {
         "lab:clang": datetime(2026, 3, 17, hour=19, tzinfo=moscow_tz),
-        "lab:llvm ir": datetime(2099, 6, 1, hour=19, tzinfo=moscow_tz),
+        "lab:llvm ir": datetime(2026, 4, 12, hour=19, tzinfo=moscow_tz),
         "lab:backend": datetime(2099, 6, 1, hour=19, tzinfo=moscow_tz),
         "lab:mlir": datetime(2099, 6, 1, hour=19, tzinfo=moscow_tz),
     }
