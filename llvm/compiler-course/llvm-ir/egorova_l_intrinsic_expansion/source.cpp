@@ -20,7 +20,8 @@ struct PowiDecomposePass : llvm::PassInfoMixin<PowiDecomposePass> {
         if (auto *Call = llvm::dyn_cast<llvm::CallInst>(&I)) {
           if (Call->getIntrinsicID() == llvm::Intrinsic::powi) {
             // Второй аргумент (индекс 1) — это степень
-            if (auto *ExpInt = llvm::dyn_cast<llvm::ConstantInt>(Call->getArgOperand(1))) {
+            if (auto *ExpInt =
+                    llvm::dyn_cast<llvm::ConstantInt>(Call->getArgOperand(1))) {
               int64_t Exp = ExpInt->getSExtValue();
               if (Exp >= 0 && Exp <= 4) {
                 CallsToReplace.push_back(Call);
@@ -40,11 +41,13 @@ struct PowiDecomposePass : llvm::PassInfoMixin<PowiDecomposePass> {
       llvm::Type *Ty = Base->getType();
       llvm::Value *Result = nullptr;
 
-      int64_t Exp = llvm::cast<llvm::ConstantInt>(Call->getArgOperand(1))->getSExtValue();
+      int64_t Exp =
+          llvm::cast<llvm::ConstantInt>(Call->getArgOperand(1))->getSExtValue();
 
       switch (Exp) {
       case 0:
-        // x^0 = 1.0 (ConstantFP::get автоматически поддерживает и скаляры, и векторы)
+        // x^0 = 1.0 (ConstantFP::get автоматически поддерживает и скаляры, и
+        // векторы)
         Result = llvm::ConstantFP::get(Ty, 1.0);
         break;
       case 1:
