@@ -1,4 +1,4 @@
-; RUN: opt -load-pass-plugin %llvmshlibdir/egorova_l_llvm.powi_decompose_LLVM_IR%pluginext \
+; RUN: opt -load-pass-plugin %llvmshlibdir/egorova_l_intrinsic_expansion_LLVM_IR%pluginext \
 ; RUN: -passes=powi-decompose -S %s | FileCheck %s
 
 ; Объявляем интринсики powi
