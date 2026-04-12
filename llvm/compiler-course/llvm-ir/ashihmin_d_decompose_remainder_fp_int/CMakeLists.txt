@@ -8,5 +8,6 @@ if (NOT WIN32 AND NOT CYGWIN)
         intrinsics_gen
         BUILDTREE_ONLY
     )
+    # Передаем зависимость наверх, чтобы CI собрал плагин перед тестами
     set(LLVM_TEST_DEPENDS ${TARGET_NAME} ${LLVM_TEST_DEPENDS} PARENT_SCOPE)
 endif()
