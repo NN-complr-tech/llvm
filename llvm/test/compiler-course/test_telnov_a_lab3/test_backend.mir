@@ -41,12 +41,7 @@
   exit:    ret void
   }
 
-...
-
 ---
-# CHECK-LABEL: name: small_loop
-# CHECK-COUNT-4: TEST32rr
-# CHECK: $eax = ADD32ri8 $eax, 4
 name:            small_loop
 tracksRegLiveness: false
 body:             |
@@ -66,14 +61,11 @@ body:             |
   bb.2:
     RET64
 
-...
+# CHECK-LABEL: name: small_loop
+# CHECK-COUNT-4: TEST32rr
+# CHECK: $eax = ADD32ri8 $eax, 4
 
 ---
-# CHECK-LABEL: name: nested_loop
-# CHECK-COUNT-3: MOV32rr
-# CHECK-COUNT-2: TEST32rr
-# CHECK: $ecx = ADD32ri8 $ecx, 3
-# CHECK: $eax = ADD32ri8 $eax, 2
 name:            nested_loop
 tracksRegLiveness: false
 body:             |
@@ -106,12 +98,13 @@ body:             |
   bb.4:
     RET64
 
-...
+# CHECK-LABEL: name: nested_loop
+# CHECK-COUNT-3: MOV32rr
+# CHECK-COUNT-2: TEST32rr
+# CHECK: $ecx = ADD32ri8 $ecx, 3
+# CHECK: $eax = ADD32ri8 $eax, 2
 
 ---
-# CHECK-LABEL: name: too_large_loop
-# CHECK-COUNT-1: MOV32rr
-# CHECK: $eax = ADD32ri8 $eax, 1
 name:            too_large_loop
 tracksRegLiveness: false
 body:             |
@@ -131,4 +124,6 @@ body:             |
   bb.2:
     RET64
 
-...
+# CHECK-LABEL: name: too_large_loop
+# CHECK-COUNT-1: MOV32rr
+# CHECK: $eax = ADD32ri8 $eax, 1
