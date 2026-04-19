@@ -46,9 +46,17 @@ private:
   bool tryUnrollLoop(MachineFunction &MF, MachineLoopInfo &MLI,
                      MachineLoop *L) const {
     MachineBasicBlock *Header = L->getHeader();
-    MachineBasicBlock *Latch = L->getLoopLatch();
-    if (!Header || !Latch)
+    if (!Header)
       return false;
+
+    MachineBasicBlock *Latch = L->getLoopLatch();
+    if (!Latch) {
+      SmallVector<MachineBasicBlock *, 4> Latches;
+      L->getLoopLatches(Latches);
+      if (Latches.size() != 1)
+        return false;
+      Latch = Latches[0];
+    }
 
     if (!hasSinglePreheader(L))
       return false;
@@ -121,7 +129,7 @@ private:
 
       for (const MachineOperand &Op : MI.operands()) {
         if (Op.isImm())
-          return (int)Op.getImm();
+          return static_cast<int>(Op.getImm());
       }
     }
     return -1;

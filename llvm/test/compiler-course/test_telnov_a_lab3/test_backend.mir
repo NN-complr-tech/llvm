@@ -99,8 +99,8 @@ body:             |
     RET64
 
 # CHECK-LABEL: name: nested_loop
-# CHECK-COUNT-1: MOV32rr
 # CHECK-COUNT-1: TEST32rr
+# CHECK-COUNT-1: MOV32rr
 # CHECK: $ecx = ADD32ri8 $ecx, 3
 # CHECK: $eax = ADD32ri8 $eax, 2
 
