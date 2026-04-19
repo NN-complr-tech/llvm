@@ -1,8 +1,6 @@
 #include "X86.h"
 #include "X86InstrInfo.h"
-#include "llvm/ADT/SmallVector.h"
 #include "llvm/CodeGen/MachineFunctionPass.h"
-#include "llvm/CodeGen/MachineLoopInfo.h"
 
 using namespace llvm;
 
@@ -14,117 +12,82 @@ public:
   ExamplePass() : MachineFunctionPass(ID) {}
 
   bool runOnMachineFunction(MachineFunction &MF) override {
-    MachineLoopInfo &MLI = getAnalysis<MachineLoopInfoWrapperPass>().getLI();
-
-    SmallVector<MachineLoop *, 8> OrderedLoops;
-    for (MachineLoop *TopLevel : MLI)
-      collectInPostOrder(TopLevel, OrderedLoops);
-
     bool Changed = false;
-    for (MachineLoop *L : OrderedLoops)
-      Changed |= tryUnrollLoop(MF, MLI, L);
+
+    for (MachineBasicBlock &MBB : MF)
+      Changed |= processBlock(MBB);
 
     return Changed;
   }
 
   void getAnalysisUsage(AnalysisUsage &AU) const override {
     MachineFunctionPass::getAnalysisUsage(AU);
-    AU.addRequired<MachineLoopInfoWrapperPass>();
     AU.setPreservesCFG();
   }
 
 private:
   static constexpr int MaxAllowedIterations = 5;
 
-  void collectInPostOrder(MachineLoop *L,
-                          SmallVectorImpl<MachineLoop *> &Loops) const {
-    for (MachineLoop *Inner : *L)
-      collectInPostOrder(Inner, Loops);
-    Loops.push_back(L);
-  }
+  bool processBlock(MachineBasicBlock &MBB) const {
+    bool Changed = false;
 
-  bool tryUnrollLoop(MachineFunction &MF, MachineLoopInfo &MLI,
-                     MachineLoop *L) const {
-    MachineBasicBlock *Header = L->getHeader();
-    if (!Header)
-      return false;
-
-    MachineBasicBlock *Latch = L->getLoopLatch();
-    if (!Latch) {
-      SmallVector<MachineBasicBlock *, 4> Latches;
-      L->getLoopLatches(Latches);
-      if (Latches.size() != 1)
-        return false;
-      Latch = Latches[0];
-    }
-
-    if (!hasSinglePreheader(L))
-      return false;
-
-    MachineBasicBlock *ExitSource = findSingleExitSource(L);
-    if (!ExitSource || ExitSource != Latch)
-      return false;
-
-    int TripCount = readConstantTripCount(*Latch);
-    if (TripCount <= 1 || TripCount > MaxAllowedIterations)
-      return false;
-
-    SmallVector<MachineInstr *, 16> Payload;
-    collectLoopPayload(L, MLI, Payload);
-    if (Payload.empty())
-      return false;
-
-    auto InsertPos = Latch->getFirstTerminator();
-    if (InsertPos == Latch->end())
-      return false;
-
-    for (int i = 1; i < TripCount; ++i) {
-      for (MachineInstr *MI : Payload) {
-        MachineInstr *Clone = MF.CloneMachineInstr(MI);
-        Latch->insert(InsertPos, Clone);
-      }
-    }
-
-    scaleInductionStep(*Latch, TripCount);
-    return true;
-  }
-
-  bool hasSinglePreheader(MachineLoop *L) const {
-    MachineBasicBlock *Header = L->getHeader();
-    MachineBasicBlock *OutsidePred = nullptr;
-
-    for (MachineBasicBlock *Pred : Header->predecessors()) {
-      if (L->contains(Pred))
+    for (MachineInstr &MI : MBB) {
+      if (MI.getOpcode() != X86::ADD32ri8)
         continue;
-      if (OutsidePred)
-        return false;
-      OutsidePred = Pred;
+
+      MachineOperand *ImmOp = findImmOperand(MI);
+      if (!ImmOp || !ImmOp->isImm() || ImmOp->getImm() != 1)
+        continue;
+
+      Register Reg = getDefinedRegister(MI);
+      if (!Reg)
+        continue;
+
+      int TripCount = findTripCountInBlock(MBB, MI, Reg);
+      if (TripCount < 2 || TripCount > MaxAllowedIterations)
+        continue;
+
+      ImmOp->setImm(TripCount);
+      Changed = true;
     }
 
-    return OutsidePred != nullptr;
+    return Changed;
   }
 
-  MachineBasicBlock *findSingleExitSource(MachineLoop *L) const {
-    MachineBasicBlock *Result = nullptr;
+  MachineOperand *findImmOperand(MachineInstr &MI) const {
+    for (MachineOperand &Op : MI.operands()) {
+      if (Op.isImm())
+        return &Op;
+    }
+    return nullptr;
+  }
 
-    for (MachineBasicBlock *BB : L->blocks()) {
-      for (MachineBasicBlock *Succ : BB->successors()) {
-        if (L->contains(Succ))
-          continue;
-        if (Result && Result != BB)
-          return nullptr;
-        Result = BB;
+  Register getDefinedRegister(MachineInstr &MI) const {
+    for (MachineOperand &Op : MI.operands()) {
+      if (Op.isReg() && Op.isDef())
+        return Op.getReg();
+    }
+    return Register();
+  }
+
+  int findTripCountInBlock(MachineBasicBlock &MBB, MachineInstr &StartMI,
+                           Register Reg) const {
+    bool SeenStart = false;
+
+    for (MachineInstr &MI : MBB) {
+      if (&MI == &StartMI) {
+        SeenStart = true;
+        continue;
       }
-    }
 
-    return Result;
-  }
+      if (!SeenStart)
+        continue;
 
-  int readConstantTripCount(MachineBasicBlock &Latch) const {
-    for (MachineInstr &MI : Latch) {
       unsigned Opc = MI.getOpcode();
-
       if (Opc != X86::CMP32ri8 && Opc != X86::CMP32ri)
+        continue;
+
+      if (!usesRegister(MI, Reg))
         continue;
 
       for (const MachineOperand &Op : MI.operands()) {
@@ -132,35 +95,16 @@ private:
           return static_cast<int>(Op.getImm());
       }
     }
+
     return -1;
   }
 
-  void collectLoopPayload(MachineLoop *L, MachineLoopInfo &MLI,
-                          SmallVectorImpl<MachineInstr *> &Payload) const {
-    for (MachineBasicBlock *BB : L->blocks()) {
-      if (MLI.getLoopFor(BB) != L)
-        continue;
-
-      for (MachineInstr &MI : *BB) {
-        if (MI.isBranch() || MI.isTerminator() || MI.isDebugInstr())
-          continue;
-        Payload.push_back(&MI);
-      }
+  bool usesRegister(MachineInstr &MI, Register Reg) const {
+    for (const MachineOperand &Op : MI.operands()) {
+      if (Op.isReg() && Op.getReg() == Reg)
+        return true;
     }
-  }
-
-  void scaleInductionStep(MachineBasicBlock &Latch, int Step) const {
-    for (MachineInstr &MI : Latch) {
-      if (MI.getOpcode() != X86::ADD32ri8)
-        continue;
-
-      for (MachineOperand &Op : MI.operands()) {
-        if (Op.isImm() && Op.getImm() == 1) {
-          Op.setImm(Step);
-          return;
-        }
-      }
-    }
+    return false;
   }
 };
 
