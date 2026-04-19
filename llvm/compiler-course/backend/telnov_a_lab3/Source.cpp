@@ -1,4 +1,5 @@
 #include "X86.h"
+#include "X86InstrInfo.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/CodeGen/MachineFunctionPass.h"
 #include "llvm/CodeGen/MachineLoopInfo.h"
@@ -65,14 +66,14 @@ private:
     if (Payload.empty())
       return false;
 
-    MachineBasicBlock::iterator InsertPos = Latch->getFirstTerminator();
+    auto InsertPos = Latch->getFirstTerminator();
     if (InsertPos == Latch->end())
       return false;
 
-    for (int Copy = 1; Copy < TripCount; ++Copy) {
+    for (int i = 1; i < TripCount; ++i) {
       for (MachineInstr *MI : Payload) {
-        MachineInstr *Dup = MF.CloneMachineInstr(MI);
-        Latch->insert(InsertPos, Dup);
+        MachineInstr *Clone = MF.CloneMachineInstr(MI);
+        Latch->insert(InsertPos, Clone);
       }
     }
 
@@ -82,10 +83,8 @@ private:
 
   bool hasSinglePreheader(MachineLoop *L) const {
     MachineBasicBlock *Header = L->getHeader();
-    if (!Header)
-      return false;
-
     MachineBasicBlock *OutsidePred = nullptr;
+
     for (MachineBasicBlock *Pred : Header->predecessors()) {
       if (L->contains(Pred))
         continue;
@@ -116,12 +115,14 @@ private:
   int readConstantTripCount(MachineBasicBlock &Latch) const {
     for (MachineInstr &MI : Latch) {
       unsigned Opc = MI.getOpcode();
+
       if (Opc != X86::CMP32ri8 && Opc != X86::CMP32ri)
         continue;
 
-      for (const MachineOperand &Op : MI.operands())
+      for (const MachineOperand &Op : MI.operands()) {
         if (Op.isImm())
-          return static_cast<int>(Op.getImm());
+          return (int)Op.getImm();
+      }
     }
     return -1;
   }
@@ -160,4 +161,4 @@ char ExamplePass::ID = 0;
 } // namespace
 
 static RegisterPass<ExamplePass>
-    X("example-x86", "loop unrolling for small machine loops", false, false);
+    X("example-x86", "loop unrolling pass", false, false);
