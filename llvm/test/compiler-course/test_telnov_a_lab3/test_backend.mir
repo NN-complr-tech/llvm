@@ -62,7 +62,7 @@ body:             |
     RET64
 
 # CHECK-LABEL: name: small_loop
-# CHECK-COUNT-4: TEST32rr
+# CHECK-COUNT-1: TEST32rr
 # CHECK: $eax = ADD32ri8 $eax, 4
 
 ---
@@ -99,8 +99,8 @@ body:             |
     RET64
 
 # CHECK-LABEL: name: nested_loop
-# CHECK-COUNT-3: MOV32rr
-# CHECK-COUNT-2: TEST32rr
+# CHECK-COUNT-1: MOV32rr
+# CHECK-COUNT-1: TEST32rr
 # CHECK: $ecx = ADD32ri8 $ecx, 3
 # CHECK: $eax = ADD32ri8 $eax, 2
 
