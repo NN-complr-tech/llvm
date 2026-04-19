@@ -160,5 +160,5 @@ char ExamplePass::ID = 0;
 
 } // namespace
 
-static RegisterPass<ExamplePass>
-    X("example-x86", "loop unrolling pass", false, false);
+static RegisterPass<ExamplePass> X("example-x86", "loop unrolling pass", false,
+                                   false);
