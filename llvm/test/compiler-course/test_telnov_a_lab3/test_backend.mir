@@ -5,11 +5,13 @@
   define void @small_loop() local_unnamed_addr {
   entry:
     br label %loop
+
   loop:
     %i = phi i32 [ 0, %entry ], [ %next, %loop ]
     %next = add i32 %i, 1
     %cond = icmp slt i32 %next, 4
     br i1 %cond, label %loop, label %exit
+
   exit:
     ret void
   }
@@ -17,18 +19,22 @@
   define void @nested_loop() local_unnamed_addr {
   entry:
     br label %outer
+
   outer:
-    %j = phi i32 [ 0, %entry ], [ %j.next, %outer.latch ]
+    %j = phi i32 [ 0, %entry ], [ %j.next, %outer_latch ]
     br label %inner
+
   inner:
     %i = phi i32 [ 0, %outer ], [ %i.next, %inner ]
     %i.next = add i32 %i, 1
     %i.cond = icmp slt i32 %i.next, 3
-    br i1 %i.cond, label %inner, label %outer.latch
-  outer.latch:
+    br i1 %i.cond, label %inner, label %outer_latch
+
+  outer_latch:
     %j.next = add i32 %j, 1
     %j.cond = icmp slt i32 %j.next, 2
     br i1 %j.cond, label %outer, label %exit
+
   exit:
     ret void
   }
@@ -36,21 +42,20 @@
   define void @too_large_loop() local_unnamed_addr {
   entry:
     br label %loop
+
   loop:
     %i = phi i32 [ 0, %entry ], [ %next, %loop ]
     %next = add i32 %i, 1
     %cond = icmp slt i32 %next, 8
     br i1 %cond, label %loop, label %exit
+
   exit:
     ret void
   }
+
 ...
 
 ---
-# CHECK-LABEL: name: small_loop
-# CHECK:      $eax = XOR32rr
-# CHECK-COUNT-4: TEST32rr
-# CHECK:      $eax = ADD32ri8 $eax, 4
 name:            small_loop
 tracksRegLiveness: false
 body:             |
@@ -69,14 +74,14 @@ body:             |
 
   bb.2:
     RET64
+
+# CHECK-LABEL: name:            small_loop
+# CHECK-COUNT-4: TEST32rr
+# CHECK: $eax = ADD32ri8 $eax, 4
+
 ...
 
 ---
-# CHECK-LABEL: name: nested_loop
-# CHECK-COUNT-3: MOV32rr
-# CHECK-COUNT-2: TEST32rr
-# CHECK:      $ecx = ADD32ri8 $ecx, 3
-# CHECK:      $eax = ADD32ri8 $eax, 2
 name:            nested_loop
 tracksRegLiveness: false
 body:             |
@@ -108,12 +113,16 @@ body:             |
 
   bb.4:
     RET64
+
+# CHECK-LABEL: name:            nested_loop
+# CHECK-COUNT-3: MOV32rr
+# CHECK-COUNT-2: TEST32rr
+# CHECK: $ecx = ADD32ri8 $ecx, 3
+# CHECK: $eax = ADD32ri8 $eax, 2
+
 ...
 
 ---
-# CHECK-LABEL: name: too_large_loop
-# CHECK-COUNT-1: OR32rr
-# CHECK:      $eax = ADD32ri8 $eax, 1
 name:            too_large_loop
 tracksRegLiveness: false
 body:             |
@@ -132,4 +141,9 @@ body:             |
 
   bb.2:
     RET64
+
+# CHECK-LABEL: name:            too_large_loop
+# CHECK-COUNT-1: OR32rr
+# CHECK: $eax = ADD32ri8 $eax, 1
+
 ...
