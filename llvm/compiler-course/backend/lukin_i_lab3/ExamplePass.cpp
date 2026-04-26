@@ -32,13 +32,13 @@ public:
 private:
   int getCountOfInstructions(MachineFunction &MF) const;
   bool Inline(MachineFunction &Caller, MachineBasicBlock &MBB, MachineInstr &MI,
-              std::map<const Function *, int> &depths);
+              int &depth);
 };
 
 char LukinInliningPass::ID = 0;
 
 bool LukinInliningPass::runOnMachineFunction(MachineFunction &MF) {
-  std::map<const Function *, int> recursionDepths;
+  int depth = 0;
   bool changed = false;
   bool onIterChanged = true;
 
@@ -49,7 +49,7 @@ bool LukinInliningPass::runOnMachineFunction(MachineFunction &MF) {
       for (auto it = MBB.begin(); it != MBB.end();) {
         MachineInstr &Ins = *it++;
         if (Ins.getOpcode() == X86::CALL64pcrel32) {
-          onIterChanged |= Inline(MF, MBB, Ins, recursionDepths);
+          onIterChanged |= Inline(MF, MBB, Ins, depth);
           changed |= onIterChanged;
         }
       }
@@ -72,8 +72,7 @@ int LukinInliningPass::getCountOfInstructions(MachineFunction &MF) const {
 }
 
 bool LukinInliningPass::Inline(MachineFunction &Caller, MachineBasicBlock &MBB,
-                               MachineInstr &Ins,
-                               std::map<const Function *, int> &depths) {
+                               MachineInstr &Ins, int &depth) {
   if (Ins.getNumOperands() == 0)
     return false;
   MachineOperand &operand = Ins.getOperand(0);
@@ -83,12 +82,13 @@ bool LukinInliningPass::Inline(MachineFunction &Caller, MachineBasicBlock &MBB,
   const Function *CalleeF = dyn_cast<Function>(operand.getGlobal());
   if (!CalleeF)
     return false;
-  if (depths[CalleeF] >= recursionMaxDepth)
-    return false;
 
   MachineFunction *CalleeMF = nullptr;
   Function *CallerF = &Caller.getFunction();
   if (CalleeF == CallerF) {
+    if (depth >= recursionMaxDepth)
+      return false;
+    depth++;
     CalleeMF = &Caller;
   } else {
     auto &MMI = getAnalysis<MachineModuleInfoWrapperPass>().getMMI();
@@ -101,8 +101,6 @@ bool LukinInliningPass::Inline(MachineFunction &Caller, MachineBasicBlock &MBB,
   int insCount = LukinInliningPass::getCountOfInstructions(*CalleeMF);
   if (insCount > maxCountOfInstructions)
     return false;
-
-  depths[CalleeF]++;
 
   MachineRegisterInfo &CallerMRI = Caller.getRegInfo();
   MachineRegisterInfo &CalleeMRI = CalleeMF->getRegInfo();
@@ -143,7 +141,7 @@ bool LukinInliningPass::Inline(MachineFunction &Caller, MachineBasicBlock &MBB,
   Ins.eraseFromParent();
 
   if (CalleeF != CallerF) {
-    depths[CalleeF]--;
+    depth--;
   }
 
   return true;
