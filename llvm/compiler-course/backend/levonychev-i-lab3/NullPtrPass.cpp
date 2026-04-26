@@ -17,8 +17,7 @@ public:
 char NullPtrDereferencePass::ID = 0;
 
 bool NullPtrDereferencePass::runOnMachineFunction(MachineFunction &func) {
-  llvm::outs() << func.getName() << '\n';
-  return true;
+  
 }
 } // namespace
 
