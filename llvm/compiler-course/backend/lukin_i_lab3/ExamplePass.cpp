@@ -140,10 +140,6 @@ bool LukinInliningPass::Inline(MachineFunction &Caller, MachineBasicBlock &MBB,
   }
   Ins.eraseFromParent();
 
-  if (CalleeF != CallerF) {
-    depth--;
-  }
-
   return true;
 }
 
