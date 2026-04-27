@@ -62,7 +62,7 @@ bool RysevInlining::performInlining(MachineFunction &caller,
   MachineOperand &op0 = callMI.getOperand(0);
   if (!op0.isGlobal())
     return false;
-  
+
   if (callMI.getOpcode() != X86::CALL64pcrel32)
     return false;
 
@@ -113,7 +113,8 @@ bool RysevInlining::performInlining(MachineFunction &caller,
 
       auto it = regMap.find(oldReg);
       if (it == regMap.end()) {
-        const TargetRegisterClass *rc = calleeMF->getRegInfo().getRegClass(oldReg);
+        const TargetRegisterClass *rc =
+            calleeMF->getRegInfo().getRegClass(oldReg);
         Register newReg = callerMRI.createVirtualRegister(rc);
         it = regMap.insert({oldReg, newReg}).first;
       }
@@ -139,7 +140,7 @@ bool RysevInlining::runOnMachineFunction(MachineFunction &MF) {
     iterChanged = false;
 
     for (MachineBasicBlock &MBB : MF) {
-      for (auto it = MBB.begin(); it != MBB.end(); ) {
+      for (auto it = MBB.begin(); it != MBB.end();) {
         MachineInstr &mi = *it;
         ++it;
         if (performInlining(MF, MBB, mi, 0)) {
@@ -156,5 +157,5 @@ bool RysevInlining::runOnMachineFunction(MachineFunction &MF) {
 } // namespace
 
 static RegisterPass<RysevInlining>
-    X("example-x86-inline", "Rysev Inlining Pass (small funcs, recursion depth <=3)",
-      false, false);
+    X("example-x86-inline",
+      "Rysev Inlining Pass (small funcs, recursion depth <=3)", false, false);
