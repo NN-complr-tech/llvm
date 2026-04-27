@@ -1,97 +1,127 @@
 # RUN: llc -mtriple x86_64-unknown-linux-gnu --load=%llvmshlibdir/levonychev-i-lab3_BACKEND%shlibext \
-# RUN: -run-pass=levonychev-nullptr-x86  %s -o - | FileCheck %s
-
-
-# Source files
-
-# test.cpp
-#
-# [[nodiscard]] bool isEven(int value) noexcept { return value % 2 == 0; }
-
-# test.ll (-O2)
-#
-# define dso_local noundef zeroext i1 @_Z6isEveni(i32 noundef %0) local_unnamed_addr {
-#  %2 = and i32 %0, 1
-#  %3 = icmp eq i32 %2, 0
-#  ret i1 %3
-# }
+# RUN: -run-pass=levonychev-nullptr-x86 %s -o - | FileCheck %s
 
 
 --- |
-  ; ModuleID = 'test.ll'
-  source_filename = "test.ll"
-  target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
-  
-  define dso_local noundef zeroext i1 @_Z6isEveni(i32 noundef %0) local_unnamed_addr {
-    %2 = and i32 %0, 1
-    %3 = icmp eq i32 %2, 0
-    ret i1 %3
+  define i32 @test_nullptr_check(ptr %p) {
+  entry:
+    %v = load i32, ptr %p
+    ret i32 %v
   }
-
+  define i32 @test_no_memory(i32 %a, i32 %b) {
+  entry:
+    %res = add i32 %a, %b
+    ret i32 %res
+  }
+  define void @test_store(ptr %p, i32 %val) {
+  entry:
+    store i32 %val, ptr %p
+    ret void
+  }
+  define i32 @test_indexed_load(ptr %arr, i64 %idx) {
+  entry:
+    %p = getelementptr i32, ptr %arr, i64 %idx
+    %v = load i32, ptr %p
+    ret i32 %v
+  }
 ...
 ---
-# CHECK: _Z6isEveni
-# CHECK: name:            _Z6isEveni
-name:            _Z6isEveni
-alignment:       16
-exposesReturnsTwice: false
-legalized:       false
-regBankSelected: false
-selected:        false
-failedISel:      false
+# CHECK-LABEL: name: test_nullptr_check
+name:            test_nullptr_check
 tracksRegLiveness: true
-hasWinCFI:       false
-callsEHReturn:   false
-callsUnwindInit: false
-hasEHScopes:     false
-hasEHFunclets:   false
-isOutlined:      false
-debugInstrRef:   true
-failsVerification: false
-tracksDebugUserValues: true
-registers:       []
+registers:
+  - { id: 0, class: gr64 }
+  - { id: 1, class: gr32 }
 liveins:
-  - { reg: '$edi', virtual-reg: '' }
-frameInfo:
-  isFrameAddressTaken: false
-  isReturnAddressTaken: false
-  hasStackMap:     false
-  hasPatchPoint:   false
-  stackSize:       0
-  offsetAdjustment: 0
-  maxAlignment:    1
-  adjustsStack:    false
-  hasCalls:        false
-  stackProtector:  ''
-  functionContext: ''
-  maxCallFrameSize: 0
-  cvBytesOfCalleeSavedRegisters: 0
-  hasOpaqueSPAdjustment: false
-  hasVAStart:      false
-  hasMustTailInVarArgFunc: false
-  hasTailCall:     false
-  isCalleeSavedInfoValid: true
-  localFrameSize:  0
-  savePoint:       ''
-  restorePoint:    ''
-fixedStack:      []
-stack:           []
-entry_values:    []
-callSites:       []
-debugValueSubstitutions: []
-constants:       []
-machineFunctionInfo:
-  amxProgModel:    None
+  - { reg: '$rdi', virtual-reg: '%0' }
+
 body:             |
-  bb.0 (%ir-block.1):
-    liveins: $edi
-  
-    ; CHECK: TEST8ri renamable $dil, 1, implicit-def $eflags, implicit killed $edi
-    ; CHECK-NEXT: renamable $al = SETCCr 4, implicit killed $eflags
-    ; CHECK-NEXT: RET64 $al
+  bb.0.entry:
+    liveins: $rdi
+    
+    %0:gr64 = COPY $rdi
+    
+    ; CHECK:      $rdi = MOV64rr %0
+    
+    ; CHECK-NEXT: CALL64pcrel32 &check_null
+    
+    ; CHECK-NEXT: %1:gr32 = MOV32rm %0, 1, $noreg, 0, $noreg
+    
+    %1:gr32 = MOV32rm %0, 1, $noreg, 0, $noreg
+    
+    $eax = COPY %1
+    RET 0, $eax
+---
+# CHECK-LABEL: name: test_no_memory
+name:            test_no_memory
+tracksRegLiveness: true
+registers:
+  - { id: 0, class: gr32 }
+  - { id: 1, class: gr32 }
+  - { id: 2, class: gr32 }
+liveins:
+  - { reg: '$edi', virtual-reg: '%0' }
+  - { reg: '$esi', virtual-reg: '%1' }
 
-    TEST8ri renamable $dil, 1, implicit-def $eflags, implicit killed $edi
-    renamable $al = SETCCr 4, implicit killed $eflags
-    RET64 $al
+body:             |
+  bb.0.entry:
+    liveins: $edi, $esi
+    
+    %0:gr32 = COPY $edi
+    %1:gr32 = COPY $esi
+    
+    ; Правильная проверка: отсюда и до ADD32rr НЕ должно быть вызова check_null
+    ; CHECK-NOT: CALL64pcrel32 &check_null
+    ; CHECK:     %2:gr32 = ADD32rr %0, %1
+    
+    %2:gr32 = ADD32rr %0, %1, implicit-def dead $eflags
+    
+    $eax = COPY %2
+    RET 0, $eax
 
+---
+# CHECK-LABEL: name: test_store
+name:            test_store
+tracksRegLiveness: true
+registers:
+  - { id: 0, class: gr64 }
+  - { id: 1, class: gr32 }
+liveins:
+  - { reg: '$rdi', virtual-reg: '%0' }
+  - { reg: '$esi', virtual-reg: '%1' }
+body:             |
+  bb.0.entry:
+    liveins: $rdi, $esi
+    %0:gr64 = COPY $rdi
+    %1:gr32 = COPY $esi
+    
+    ; CHECK:      $rdi = MOV64rr %0
+    ; CHECK-NEXT: CALL64pcrel32 &check_null
+    ; CHECK-NEXT: MOV32mr %0, 1, $noreg, 0, $noreg, %1
+    MOV32mr %0, 1, $noreg, 0, $noreg, %1
+    RET 0
+
+---
+# CHECK-LABEL: name: test_indexed_load
+name:            test_indexed_load
+tracksRegLiveness: true
+registers:
+  - { id: 0, class: gr64 }
+  - { id: 1, class: gr64_nosp }  # <--- ИЗМЕНЕНО: gr64 -> gr64_nosp
+  - { id: 2, class: gr32 }
+liveins:
+  - { reg: '$rdi', virtual-reg: '%0' }
+  - { reg: '$rsi', virtual-reg: '%1' }
+body:             |
+  bb.0.entry:
+    liveins: $rdi, $rsi
+    %0:gr64 = COPY $rdi
+    %1:gr64_nosp = COPY $rsi
+    
+    ; CHECK:      $rdi = MOV64rr %0
+    ; CHECK-NEXT: CALL64pcrel32 &check_null
+    ; CHECK-NEXT: %2:gr32 = MOV32rm %0, 4, %1, 0, $noreg
+    %2:gr32 = MOV32rm %0, 4, %1, 0, $noreg
+    $eax = COPY %2
+    RET 0, $eax
 ...
