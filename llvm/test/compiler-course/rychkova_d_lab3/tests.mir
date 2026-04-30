@@ -1,0 +1,67 @@
+# RUN: llc -mtriple x86_64-unknown-linux-gnu --load=%llvmshlibdir/ваш_pass_BACKEND%shlibext -run-pass=loop-unroll-limited %s -o - | FileCheck %s
+
+--- |
+  define void @test_tc4() {
+  entry:
+    br label %loop
+  loop:
+    %i = phi i32 [ 0, %entry ], [ %i.next, %loop ]
+    %i.next = add i32 %i, 1
+    %cond = icmp slt i32 %i.next, 4
+    br i1 %cond, label %loop, label %exit
+  exit:
+    ret void
+  }
+...
+
+# CHECK-LABEL: name: test_tc4
+# CHECK-NOT: JCC_1 %bb.1
+# CHECK: RET64
+
+# RUN: llc -mtriple x86_64-unknown-linux-gnu --load=%llvmshlibdir/ваш_pass_BACKEND%shlibext -run-pass=loop-unroll-limited %s -o - | FileCheck %s
+
+--- |
+  define void @test_tc7() {
+  entry:
+    br label %loop
+  loop:
+    %i = phi i32 [ 0, %entry ], [ %i.next, %loop ]
+    %i.next = add i32 %i, 1
+    %cond = icmp slt i32 %i.next, 7
+    br i1 %cond, label %loop, label %exit
+  exit:
+    ret void
+  }
+...
+
+# CHECK-LABEL: name: test_tc7
+# CHECK: JCC_1 %bb.1
+# CHECK-NOT: JCC_1 %bb.1
+# CHECK: RET64
+
+# RUN: llc -mtriple x86_64-unknown-linux-gnu --load=%llvmshlibdir/ваш_pass_BACKEND%shlibext -run-pass=loop-unroll-limited %s -o - | FileCheck %s
+
+--- |
+  define void @nested() {
+  entry:
+    br label %outer
+  outer:
+    %j = phi i32 [ 0, %entry ], [ %j.next, %outer ]
+    br label %inner
+  inner:
+    %i = phi i32 [ 0, %outer ], [ %i.next, %inner ]
+    %i.next = add i32 %i, 1
+    %icond = icmp slt i32 %i.next, 3
+    br i1 %icond, label %inner, label %outer
+  outer:
+    %j.next = add i32 %j, 1
+    %jcond = icmp slt i32 %j.next, 4
+    br i1 %jcond, label %outer, label %exit
+  exit:
+    ret void
+  }
+...
+
+# CHECK-LABEL: name: nested
+# Внутренний цикл (TC=3) развернут полностью
+# Внешний цикл (TC=4) развернут полностью (т.к. 4 <= 5)
