@@ -2,10 +2,10 @@
 #include "X86InstrInfo.h"
 #include "X86Subtarget.h"
 #include "llvm/CodeGen/MachineFunction.h"
+#include "llvm/CodeGen/MachineInstrBuilder.h"
 #include "llvm/CodeGen/MachineModuleInfo.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
-#include "llvm/CodeGen/MachineInstrBuilder.h"
 
 using namespace llvm;
 
@@ -26,22 +26,26 @@ public:
   }
 
   int getStep(unsigned Opcode) const {
-    if (Opcode == X86::INC32r || Opcode == X86::INC64r) return 1;
-    if (Opcode == X86::DEC32r || Opcode == X86::DEC64r) return -1;
+    if (Opcode == X86::INC32r || Opcode == X86::INC64r)
+      return 1;
+    if (Opcode == X86::DEC32r || Opcode == X86::DEC64r)
+      return -1;
     return 0;
   }
 
   bool runOnModule(Module &M) override {
     bool Changed = false;
-    
+
     auto &MMIWrapper = getAnalysis<MachineModuleInfoWrapperPass>();
     MachineModuleInfo &MMI = MMIWrapper.getMMI();
 
     for (Function &F : M) {
-      if (F.isDeclaration()) continue;
-      
+      if (F.isDeclaration())
+        continue;
+
       MachineFunction *MF = MMI.getMachineFunction(F);
-      if (!MF) continue;
+      if (!MF)
+        continue;
 
       const TargetInstrInfo *TII = MF->getSubtarget().getInstrInfo();
 
@@ -54,10 +58,9 @@ public:
             Register Reg = I->getOperand(0).getReg();
             bool is64Bit = (Opcode == X86::INC64r || Opcode == X86::DEC64r);
             int Count = getStep(Opcode);
-            
+
             auto NextI = std::next(I);
-            while (NextI != MBB.end() && 
-                   NextI->getOpcode() == Opcode && 
+            while (NextI != MBB.end() && NextI->getOpcode() == Opcode &&
                    NextI->getOperand(0).getReg() == Reg) {
               Count += getStep(Opcode);
               auto ToDelete = NextI;
@@ -71,7 +74,7 @@ public:
               NewOpcode = is64Bit ? X86::ADD64ri8 : X86::ADD32ri8;
             } else {
               NewOpcode = is64Bit ? X86::SUB64ri8 : X86::SUB32ri8;
-              Count = -Count; 
+              Count = -Count;
             }
 
             BuildMI(MBB, I, I->getDebugLoc(), TII->get(NewOpcode), Reg)
@@ -94,4 +97,5 @@ public:
 } // namespace
 
 char NikolaevDChangeIncDec::ID = 0;
-static RegisterPass<NikolaevDChangeIncDec> X("nikolaev-d-change-inc-dec-module", "change pass", false, false);
+static RegisterPass<NikolaevDChangeIncDec> X("nikolaev-d-change-inc-dec-module",
+                                             "change pass", false, false);
