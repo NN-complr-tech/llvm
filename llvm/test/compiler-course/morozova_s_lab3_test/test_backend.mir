@@ -73,12 +73,26 @@ body: |
     ; CHECK: %6:gr32 = ADD32ri %5, 3, implicit-def dead $eflags
 
     ; CHECK: %7:gr32 = MOV32ri 3
-    ; CHECK: CALL64pcrel32 @large
-    ; CHECK: %8:gr32 = COPY $eax
+    ; CHECK: %8:gr32 = ADD32ri %7, 1, implicit-def dead $eflags
+    ; CHECK: %9:gr32 = ADD32ri %8, 2, implicit-def dead $eflags
+    ; CHECK: %10:gr32 = ADD32ri %9, 3, implicit-def dead $eflags
+    ; CHECK: %11:gr32 = ADD32ri %10, 4, implicit-def dead $eflags
+    ; CHECK: %12:gr32 = ADD32ri %11, 5, implicit-def dead $eflags
+    ; CHECK: %13:gr32 = ADD32ri %12, 6, implicit-def dead $eflags
+    ; CHECK: %14:gr32 = ADD32ri %13, 7, implicit-def dead $eflags
+    ; CHECK: %15:gr32 = ADD32ri %14, 8, implicit-def dead $eflags
+    ; CHECK: %16:gr32 = ADD32ri %15, 9, implicit-def dead $eflags
+    ; CHECK: %17:gr32 = ADD32ri %16, 10, implicit-def dead $eflags
+    ; CHECK: %18:gr32 = ADD32ri %17, 11, implicit-def dead $eflags
+    ; CHECK: %19:gr32 = ADD32ri %18, 12, implicit-def dead $eflags
+    ; CHECK: %20:gr32 = ADD32ri %19, 13, implicit-def dead $eflags
+    ; CHECK: %21:gr32 = ADD32ri %20, 14, implicit-def dead $eflags
+    ; CHECK: %22:gr32 = ADD32ri %21, 15, implicit-def dead $eflags
+    ; CHECK: %23:gr32 = ADD32ri %22, 16, implicit-def dead $eflags
 
-    ; CHECK: %9:gr32 = MOV32ri 4
+    ; CHECK: %24:gr32 = MOV32ri 4
     ; CHECK: CALL64pcrel32 @factorial
-    ; CHECK: %10:gr32 = COPY $eax
+    ; CHECK: %25:gr32 = COPY $eax
 
     %0:gr32 = MOV32ri 10
     %1:gr32 = MOV32ri 20
@@ -90,16 +104,29 @@ body: |
     %6:gr32 = ADD32ri %5, 3, implicit-def dead $eflags
 
     %7:gr32 = MOV32ri 3
-    CALL64pcrel32 @large, csr_64, implicit $sp, implicit $ssp, implicit-def $eax
-    %8:gr32 = COPY $eax
+    %8:gr32 = ADD32ri %7, 1, implicit-def dead $eflags
+    %9:gr32 = ADD32ri %8, 2, implicit-def dead $eflags
+    %10:gr32 = ADD32ri %9, 3, implicit-def dead $eflags
+    %11:gr32 = ADD32ri %10, 4, implicit-def dead $eflags
+    %12:gr32 = ADD32ri %11, 5, implicit-def dead $eflags
+    %13:gr32 = ADD32ri %12, 6, implicit-def dead $eflags
+    %14:gr32 = ADD32ri %13, 7, implicit-def dead $eflags
+    %15:gr32 = ADD32ri %14, 8, implicit-def dead $eflags
+    %16:gr32 = ADD32ri %15, 9, implicit-def dead $eflags
+    %17:gr32 = ADD32ri %16, 10, implicit-def dead $eflags
+    %18:gr32 = ADD32ri %17, 11, implicit-def dead $eflags
+    %19:gr32 = ADD32ri %18, 12, implicit-def dead $eflags
+    %20:gr32 = ADD32ri %19, 13, implicit-def dead $eflags
+    %21:gr32 = ADD32ri %20, 14, implicit-def dead $eflags
+    %22:gr32 = ADD32ri %21, 15, implicit-def dead $eflags
+    %23:gr32 = ADD32ri %22, 16, implicit-def dead $eflags
 
-    %9:gr32 = MOV32ri 4
+    %24:gr32 = MOV32ri 4
     CALL64pcrel32 @factorial, csr_64, implicit $sp, implicit $ssp, implicit-def $eax
-    %10:gr32 = COPY $eax
+    %25:gr32 = COPY $eax
 
-    %11:gr32 = ADD32rr %2, %6, implicit-def dead $eflags
-    %12:gr32 = ADD32rr %11, %8, implicit-def dead $eflags
-    %13:gr32 = ADD32rr %12, %10, implicit-def dead $eflags
-    $eax = COPY %13
+    %26:gr32 = ADD32rr %2, %6, implicit-def dead $eflags
+    %27:gr32 = ADD32rr %26, %23, implicit-def dead $eflags
+    %28:gr32 = ADD32rr %27, %25, implicit-def dead $eflags
+    $eax = COPY %28
     RET 0, $eax
-
