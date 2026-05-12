@@ -13,8 +13,8 @@ using namespace mlir;
 namespace {
 
 static bool isControlFlowOp(Operation *op) {
-  return isa<scf::ForOp, scf::IfOp, scf::WhileOp,
-             affine::AffineForOp, affine::AffineIfOp>(op);
+  return isa<scf::ForOp, scf::IfOp, scf::WhileOp, affine::AffineForOp,
+             affine::AffineIfOp>(op);
 }
 
 static int64_t getMaxBlockDepth(Region &region) {
