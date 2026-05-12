@@ -2,6 +2,7 @@
 // RUN:   --pass-pipeline="builtin.module(frolova_s_block_depth)" %s \
 // RUN:   | FileCheck %s
 
+#set = affine_set<(d0)[s0] : (d0 >= 0, s0 - d0 >= 0)>
 
 // глубина 0 (пустая функция)
 // CHECK-LABEL: func.func @empty
@@ -9,7 +10,6 @@
 func.func @empty() {
   return
 }
-
 
 // только scf.for - глубина 1
 // CHECK-LABEL: func.func @one_for
@@ -63,6 +63,7 @@ func.func @while_with_for(%cond : i1, %lb : index, %ub : index, %step : index) {
 // CHECK-LABEL: func.func @affine_nested
 // CHECK-SAME: max_block_depth = 2
 func.func @affine_nested() {
+  %c0 = arith.constant 0 : index
   affine.for %i = 0 to 10 {
     affine.if #set(%i)[%c0] {
       %c = arith.constant 5 : i32
@@ -71,7 +72,7 @@ func.func @affine_nested() {
   return
 }
 
-// тройная вложенность: scf.for, scf.if, scf.for, константа
+// тройная вложенность: scf.for, scf.if, scf.for
 // CHECK-LABEL: func.func @triple_nested
 // CHECK-SAME: max_block_depth = 3
 func.func @triple_nested(%lb : index, %ub : index, %step : index, %cond : i1) {
@@ -85,7 +86,7 @@ func.func @triple_nested(%lb : index, %ub : index, %step : index, %cond : i1) {
   return
 }
 
-// if с else - глубина 1 в каждом (ветвление на одном уровне не увеличивает глубину)
+// if с else - глубина 2
 // CHECK-LABEL: func.func @if_else_branches
 // CHECK-SAME: max_block_depth = 2
 func.func @if_else_branches(%cond : i1, %lb : index, %ub : index, %step : index) {
