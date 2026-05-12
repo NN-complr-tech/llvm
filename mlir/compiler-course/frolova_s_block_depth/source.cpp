@@ -71,4 +71,3 @@ extern "C" LLVM_ATTRIBUTE_WEAK mlir::PassPluginLibraryInfo
 mlirGetPassPluginInfo() {
   return getFrolovaSBlockDepthPluginInfo();
 }
-
