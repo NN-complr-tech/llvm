@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -74,11 +75,11 @@ public:
 
   void applyRewrites() {
     for (const VarDecl *Decl : Candidates) {
-      const std::string Replacement = buildReplacementType(Decl);
-      if (Replacement.empty())
+      const std::optional<std::string> Replacement = buildReplacementType(Decl);
+      if (!Replacement)
         continue;
 
-      replaceType(Decl, Replacement);
+      replaceType(Decl, *Replacement);
     }
   }
 
@@ -233,7 +234,7 @@ private:
       markMutation(Argument, true, false);
   }
 
-  std::string buildReplacementType(const VarDecl *Decl) const {
+  std::optional<std::string> buildReplacementType(const VarDecl *Decl) const {
     const MutationState State = Mutations.lookup(Decl);
     const QualType Type = Decl->getType();
     PrintingPolicy Policy(Context.getLangOpts());
@@ -241,7 +242,7 @@ private:
     if (Type->isLValueReferenceType()) {
       const QualType Referred = Type.getNonReferenceType();
       if (State.ObjectChanged || Referred.isConstQualified())
-        return "";
+        return std::nullopt;
 
       const QualType Replacement =
           Context.getLValueReferenceType(Context.getConstType(Referred));
@@ -249,7 +250,7 @@ private:
     }
 
     if (!Type->isPointerType())
-      return "";
+      return std::nullopt;
 
     const bool NeedConstObject =
         !State.ObjectChanged && !Type->getPointeeType().isConstQualified();
@@ -257,7 +258,7 @@ private:
                                   !Type.isLocalConstQualified() &&
                                   canMakePointerConst(Decl);
     if (!NeedConstObject && !NeedConstPointer)
-      return "";
+      return std::nullopt;
 
     QualType Pointee = Type->getPointeeType();
     if (NeedConstObject)
