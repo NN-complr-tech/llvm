@@ -14,6 +14,8 @@ jobs:
         git-clang-format --diff `git merge-base ${GITHUB_SHA} ${GITHUB_BASE_REF}`
   clang-tidy:
     runs-on: ubuntu-latest
+    env:
+      CLANG_VERSION: 21
     steps:
     - uses: actions/checkout@v4
       with:
@@ -21,25 +23,42 @@ jobs:
         fetch-depth: 0
     - name: Update submodules
       run: git submodule update --init --recursive
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          ninja-build \
+          wget \
+          gnupg \
+          software-properties-common
+        wget -qO llvm.sh https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        sudo ./llvm.sh "${CLANG_VERSION}"
+        sudo apt-get install -y "clang-tidy-${CLANG_VERSION}"
     - name: ccache
       uses: hendrikmuhs/ccache-action@v1.2
       with:
         key: ${{ github.job }}
-    - uses: ZedThree/clang-tidy-review@v0.23.1
-      id: review
+    - name: Configure CMake
+      run: |
+        cmake -S llvm -B build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+          -DLLVM_ENABLE_PROJECTS='clang;mlir' \
+          -DLLVM_ENABLE_ASSERTIONS=ON \
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+          -G Ninja
+      env:
+        CC: clang-${{ env.CLANG_VERSION }}
+        CXX: clang++-${{ env.CLANG_VERSION }}
+    - name: Run clang-tidy
+      id: clang_tidy
+      uses: aobolensk/clang-tidy-action@v1
       with:
         build_dir: build
-        cmake_command: >-
-          cmake -S llvm -B build
-          -DCMAKE_BUILD_TYPE=Release
-          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-          -DLLVM_ENABLE_PROJECTS='clang;mlir'
-          -DLLVM_ENABLE_ASSERTIONS=ON
-          -DCMAKE_C_COMPILER_LAUNCHER=ccache
-          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
-          -G Ninja
-        config_file: .clang-tidy
-        apt_packages: build-essential,ninja-build
-      env:
-        CC: clang-19
-        CXX: clang++-19
+        clang_tidy_version: ${{ env.CLANG_VERSION }}
+    - name: Fail on clang-tidy diagnostics
+      if: steps.clang_tidy.outputs.total_comments != '0'
+      run: exit 1
