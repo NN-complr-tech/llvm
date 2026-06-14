@@ -60,5 +60,7 @@ jobs:
         build_dir: build
         clang_tidy_version: ${{ env.CLANG_VERSION }}
     - name: Fail on clang-tidy diagnostics
-      if: steps.clang_tidy.outputs.total_comments != '0'
-      run: exit 1
+      if: steps.clang_tidy.outputs.total_comments > 0
+      run: |
+        echo "clang-tidy run has failed. See previous 'Run clang-tidy' stage logs"
+        exit 1
