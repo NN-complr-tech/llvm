@@ -15,7 +15,7 @@ jobs:
   clang-tidy:
     runs-on: ubuntu-latest
     env:
-      CLANG_VERSION: 21
+      CLANG_VERSION: 22
     steps:
     - uses: actions/checkout@v4
       with:
