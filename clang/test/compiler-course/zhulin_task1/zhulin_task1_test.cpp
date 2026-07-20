@@ -1,7 +1,5 @@
 // RUN: %clang_cc1 -load %llvmshlibdir/zhulin_task1_ClangAST%pluginext -plugin zhulin_task1_plugin -fsyntax-only %s 2>&1 | FileCheck %s
 
-#include <iostream>
-
 // CHECK: warning: function 'getValue' returning non-void should be marked
 int getValue() { return 42; }
 
